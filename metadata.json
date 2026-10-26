@@ -1,0 +1,6 @@
+{
+  "name": "Vision Medical | Employee Template Studio",
+  "description": "Official brand template customization studio for Vision Medical employees. Personalize company-approved templates with Arabic & English typography, smart placement, and high-resolution export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
