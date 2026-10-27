@@ -310,61 +310,86 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
           )}
 
           {/* Interactive Text Elements (Draggable & Resizable) */}
-          {elements.map((el) => {
-            const isSelected = selectedElementId === el.id;
+          {elements
+            .filter((el) => el.isVisible !== false)
+            .map((el) => {
+              const isSelected = selectedElementId === el.id;
+              const elementLabel =
+                el.id === 'name'
+                  ? currentLanguage === 'ar'
+                    ? 'الاسم'
+                    : 'Name'
+                  : el.id === 'role'
+                  ? currentLanguage === 'ar'
+                    ? 'المسمى'
+                    : 'Role'
+                  : currentLanguage === 'ar'
+                  ? 'نص إضافي'
+                  : 'Optional Text';
 
-            return (
-              <div
-                key={el.id}
-                onMouseDown={(e) => handleDragStart(e, el.id)}
-                onTouchStart={(e) => handleDragStart(e, el.id)}
-                className={`absolute cursor-move select-none z-20 group transition-shadow ${
-                  isSelected
-                    ? 'ring-2 ring-[#00A3E0] ring-offset-1 ring-offset-transparent shadow-lg'
-                    : 'hover:ring-1 hover:ring-[#00A3E0]/50'
-                }`}
-                style={{
-                  left: `${el.xPercent}%`,
-                  top: `${el.yPercent}%`,
-                  transform: 'translate(-50%, -50%)',
-                  padding: '4px 8px',
-                  borderRadius: '6px',
-                }}
-              >
-                {/* Text Node */}
-                <p
-                  dir="auto"
+              return (
+                <div
+                  key={el.id}
+                  onMouseDown={(e) => handleDragStart(e, el.id)}
+                  onTouchStart={(e) => handleDragStart(e, el.id)}
+                  className={`absolute cursor-move select-none z-20 group transition-shadow ${
+                    isSelected
+                      ? 'ring-2 ring-[#00A3E0] ring-offset-1 ring-offset-transparent shadow-lg'
+                      : 'hover:ring-1 hover:ring-[#00A3E0]/50'
+                  }`}
                   style={{
-                    fontFamily: `"${el.fontFamily}", Cairo, "Plus Jakarta Sans", sans-serif`,
-                    fontSize: `${el.fontSize}px`,
-                    fontWeight: el.fontWeight,
-                    color: el.color,
-                    textAlign: el.alignment,
-                    letterSpacing: `${el.letterSpacing}px`,
-                    lineHeight: el.lineHeight,
-                    whiteSpace: 'nowrap',
-                    textShadow: el.hasShadow ? '0 2px 8px rgba(0,0,0,0.5)' : 'none',
+                    left: `${el.xPercent}%`,
+                    top: `${el.yPercent}%`,
+                    transform: 'translate(-50%, -50%)',
+                    padding: '4px 8px',
+                    borderRadius: '6px',
                   }}
                 >
-                  {el.text || (currentLanguage === 'ar' ? 'الاسم هنا' : 'Your Name Here')}
-                </p>
+                  {/* Text Node */}
+                  <p
+                    dir="auto"
+                    style={{
+                      fontFamily: `"${el.fontFamily}", Cairo, "Plus Jakarta Sans", sans-serif`,
+                      fontSize: `${el.fontSize}px`,
+                      fontWeight: el.fontWeight,
+                      color: el.color,
+                      textAlign: el.alignment,
+                      letterSpacing: `${el.letterSpacing}px`,
+                      lineHeight: el.lineHeight,
+                      whiteSpace: 'nowrap',
+                      textShadow: el.hasShadow ? '0 2px 8px rgba(0,0,0,0.5)' : 'none',
+                    }}
+                  >
+                    {el.text ||
+                      (el.id === 'name'
+                        ? currentLanguage === 'ar'
+                          ? 'الاسم هنا'
+                          : 'Your Name Here'
+                        : el.id === 'role'
+                        ? currentLanguage === 'ar'
+                          ? 'المسمى الوظيفي'
+                          : 'Job Title'
+                        : currentLanguage === 'ar'
+                        ? 'نص إضافي اختياري'
+                        : 'Optional Text')}
+                  </p>
 
-                {/* Selection Handles (Visible when selected) */}
-                {isSelected && (
-                  <>
-                    {/* Top drag pill indicator */}
-                    <div className="absolute -top-6 start-1/2 -translate-x-1/2 bg-[#00A3E0] text-white px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-md pointer-events-none">
-                      <Move className="w-2.5 h-2.5" />
-                      <span>{el.id === 'name' ? 'Name' : 'Role'}</span>
-                    </div>
+                  {/* Selection Handles (Visible when selected) */}
+                  {isSelected && (
+                    <>
+                      {/* Top drag pill indicator */}
+                      <div className="absolute -top-6 start-1/2 -translate-x-1/2 bg-[#00A3E0] text-white px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-md pointer-events-none whitespace-nowrap">
+                        <Move className="w-2.5 h-2.5" />
+                        <span>{elementLabel}</span>
+                      </div>
 
-                    {/* Bottom-right Corner Resize Handle */}
-                    <div
-                      onMouseDown={(e) => handleResizeStart(e, el.id)}
-                      onTouchStart={(e) => handleResizeStart(e, el.id)}
-                      className="absolute -bottom-1.5 -end-1.5 w-3.5 h-3.5 bg-white border-2 border-[#00A3E0] rounded-full shadow-md cursor-nwse-resize hover:scale-125 transition-transform"
-                      title="Drag to resize text font"
-                    />
+                      {/* Bottom-right Corner Resize Handle */}
+                      <div
+                        onMouseDown={(e) => handleResizeStart(e, el.id)}
+                        onTouchStart={(e) => handleResizeStart(e, el.id)}
+                        className="absolute -bottom-1.5 -end-1.5 w-3.5 h-3.5 bg-white border-2 border-[#00A3E0] rounded-full shadow-md cursor-nwse-resize hover:scale-125 transition-transform"
+                        title="Drag to resize text font"
+                      />
 
                     {/* Corner Dots */}
                     <div className="absolute -top-1 -start-1 w-2 h-2 bg-[#00A3E0] rounded-full" />

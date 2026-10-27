@@ -84,6 +84,30 @@ export const CATEGORY_DEFINITIONS: Record<
   TemplateCategory,
   { labelEn: string; labelAr: string; icon: string; countHint: string; descriptionEn: string; descriptionAr: string }
 > = {
+  'celebrations': {
+    labelEn: 'Celebrations & Occasions',
+    labelAr: 'المناسبات والأعياد',
+    icon: 'Sparkles',
+    countHint: 'Official Designs',
+    descriptionEn: 'Official Vision Medical greetings for Ramadan Kareem, Eid Al-Fitr, and Eid Al-Adha.',
+    descriptionAr: 'تصاميم التهنئة الرسمية لرؤية الطبية لشهر رمضان المبارك وعيد الفطر وعيد الأضحى.',
+  },
+  'internal-announcements': {
+    labelEn: 'Internal Announcements',
+    labelAr: 'التعاميم والإعلانات الداخلية',
+    icon: 'Megaphone',
+    countHint: 'Onboarding & Notices',
+    descriptionEn: 'Official welcome announcements and internal corporate notices from Vision Medical.',
+    descriptionAr: 'إعلانات الترحيب بالموظفين الجدد والتعاميم الإدارية الداخلية المعتمدة.',
+  },
+  'letterheads': {
+    labelEn: 'Letterhead, Header & Footer',
+    labelAr: 'الخطابات والترويسات الرسمية',
+    icon: 'FileText',
+    countHint: 'A4 & Banners',
+    descriptionEn: 'Official Vision Medical company letterhead (with watermark), header banner, and footer banner.',
+    descriptionAr: 'ورق الخطابات الرسمي لشركة رؤية الطبية بالعلامة المائية، والترويسة العلوية والتذييل الرسمي.',
+  },
   'id-cards': {
     labelEn: 'Employee ID & Badges',
     labelAr: 'بطاقات الهوية والموظفين',
@@ -116,14 +140,6 @@ export const CATEGORY_DEFINITIONS: Record<
     descriptionEn: 'Square announcements, congratulations, and medical achievements posts.',
     descriptionAr: 'تصاميم مربعة للمباركات والإنجازات الطبية ومنشورات شبكات التواصل.',
   },
-  'internal-announcements': {
-    labelEn: 'Internal Announcements',
-    labelAr: 'التعاميم والإعلانات الداخلية',
-    icon: 'Megaphone',
-    countHint: '1200 × 800',
-    descriptionEn: 'Formal memos, departmental notices, and staff recognition banners.',
-    descriptionAr: 'إعلانات داخلية وتكريمات وبوسترات الأقسام والمستشفيات.',
-  },
   'event-graphics': {
     labelEn: 'Events & Conferences',
     labelAr: 'الفعاليات والمؤتمرات',
@@ -131,14 +147,6 @@ export const CATEGORY_DEFINITIONS: Record<
     countHint: '1200 × 675',
     descriptionEn: 'Speaker graphics, symposium certificates, and healthcare summit materials.',
     descriptionAr: 'لافتات المتحدثين وبطاقات المشاركة في المؤتمرات الطبية.',
-  },
-  'celebrations': {
-    labelEn: 'Celebrations & Holidays',
-    labelAr: 'المناسبات والأعياد',
-    icon: 'Sparkles',
-    countHint: '1080 × 1080',
-    descriptionEn: 'Saudi National Day, Eid Al-Fitr, Ramadan Kareem, and Doctor Appreciation.',
-    descriptionAr: 'تهاني اليوم الوطني السعودي، يوم التأسيس، الأعياد ورمضان المبارك.',
   },
 };
 
@@ -209,6 +217,13 @@ export const UI_TRANSLATIONS = {
     dimensionNotice: 'Canvas dimensions:',
     arabicFontNotice: 'Arabic & English bilingual typography supported.',
     copyLink: 'Copy Design Link',
+    optionalTextBox: 'Optional Text Box',
+    addOptionalText: '+ Optional Text Box',
+    optionalTextActive: 'Optional Text Active',
+    optionalTextPlaceholder: 'e.g. Heart & Vascular Center or ID: VM-884920',
+    optionalTextDesc: 'Add custom department, slogan, ID number, date, or accreditation badge.',
+    removeOptionalText: 'Remove Text Box',
+    optionalTabLabel: 'Optional Text',
   },
   ar: {
     appTitle: 'رؤية الطبية',
@@ -276,5 +291,12 @@ export const UI_TRANSLATIONS = {
     dimensionNotice: 'أبعاد مساحة التصميم:',
     arabicFontNotice: 'يدعم التيبوغرافيا العربية والإنجليزية بدقة عالية.',
     copyLink: 'نسخ رابط التصميم',
+    optionalTextBox: 'مربع نص اختياري',
+    addOptionalText: '+ إضافة نص اختياري',
+    optionalTextActive: 'النص الاختياري مفعّل',
+    optionalTextPlaceholder: 'مثال: مركز جراحة القلب أو رقم الهوية: VM-884920',
+    optionalTextDesc: 'أضف قسماً مخصصاً، شعاراً، رقماً وظيفياً، أو تاريخاً أو اعتماداً.',
+    removeOptionalText: 'إزالة مربع النص',
+    optionalTabLabel: 'نص إضافي',
   },
 };

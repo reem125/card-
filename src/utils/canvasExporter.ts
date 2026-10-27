@@ -99,7 +99,7 @@ export async function renderTemplateToCanvas(
 
   // Draw text elements on canvas
   for (const el of elements) {
-    if (!el.text || !el.text.trim()) continue;
+    if (el.isVisible === false || !el.text || !el.text.trim()) continue;
 
     const scaledFontSize = Math.round(el.fontSize * scale);
     const x = (el.xPercent / 100) * targetWidth;

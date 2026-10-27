@@ -14,6 +14,7 @@ import {
   Sparkles,
   ArrowRight,
   Layers,
+  FileText,
 } from 'lucide-react';
 
 interface TemplateGalleryProps {
@@ -21,6 +22,10 @@ interface TemplateGalleryProps {
   selectedTemplate: Template | null;
   onSelectTemplate: (template: Template) => void;
   currentLanguage: Language;
+  optionalText?: string;
+  isOptionalTextActive?: boolean;
+  onToggleOptionalText?: (active: boolean) => void;
+  onUpdateOptionalText?: (text: string) => void;
 }
 
 export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
@@ -28,6 +33,10 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
   selectedTemplate,
   onSelectTemplate,
   currentLanguage,
+  optionalText,
+  isOptionalTextActive,
+  onToggleOptionalText,
+  onUpdateOptionalText,
 }) => {
   const t = UI_TRANSLATIONS[currentLanguage];
   const isRtl = currentLanguage === 'ar';
@@ -52,17 +61,19 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
 
   const categoryList: (TemplateCategory | 'all')[] = [
     'all',
-    'id-cards',
-    'email-signatures',
-    'linkedin-banners',
-    'social-media',
-    'internal-announcements',
-    'event-graphics',
     'celebrations',
+    'internal-announcements',
+    'letterheads',
   ];
 
   const getCategoryIcon = (cat: TemplateCategory | 'all') => {
     switch (cat) {
+      case 'celebrations':
+        return <Sparkles className="w-3.5 h-3.5" />;
+      case 'internal-announcements':
+        return <Megaphone className="w-3.5 h-3.5" />;
+      case 'letterheads':
+        return <FileText className="w-3.5 h-3.5" />;
       case 'id-cards':
         return <IdCard className="w-3.5 h-3.5" />;
       case 'email-signatures':
@@ -71,12 +82,8 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
         return <Linkedin className="w-3.5 h-3.5" />;
       case 'social-media':
         return <Share2 className="w-3.5 h-3.5" />;
-      case 'internal-announcements':
-        return <Megaphone className="w-3.5 h-3.5" />;
       case 'event-graphics':
         return <Calendar className="w-3.5 h-3.5" />;
-      case 'celebrations':
-        return <Sparkles className="w-3.5 h-3.5" />;
       default:
         return <Layers className="w-3.5 h-3.5" />;
     }
@@ -84,6 +91,48 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Optional Text Box Setup (in Change Template / Library View) */}
+      <div className="p-3.5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-[#E0F2FE] text-[#00A3E0] shrink-0">
+            <FileText className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-900">{t.optionalTextBox}</span>
+              <span className="text-[10px] text-slate-500 font-medium">
+                {currentLanguage === 'ar' ? 'تخصيص اختياري لجميع القوالب' : 'Available across all templates'}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 line-clamp-1">{t.optionalTextDesc}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <input
+            type="text"
+            dir="auto"
+            value={optionalText || ''}
+            onChange={(e) => onUpdateOptionalText?.(e.target.value)}
+            placeholder={t.optionalTextPlaceholder}
+            className="flex-1 md:w-72 px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#00A3E0]/30 focus:border-[#00A3E0] text-slate-900 transition-all"
+          />
+          <button
+            type="button"
+            onClick={() => onToggleOptionalText?.(!isOptionalTextActive)}
+            className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all shrink-0 cursor-pointer ${
+              isOptionalTextActive
+                ? 'bg-[#00A3E0] text-white border-[#00A3E0] shadow-xs'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+            }`}
+          >
+            {isOptionalTextActive
+              ? '✓ ' + (currentLanguage === 'ar' ? 'مفعّل' : 'Active')
+              : '+ ' + (currentLanguage === 'ar' ? 'تفعيل' : 'Enable')}
+          </button>
+        </div>
+      </div>
+
       {/* Category Filter Bar & Search */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         {/* Category Tabs */}
@@ -166,13 +215,13 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
                 {/* Visual Thumbnail Preview Container */}
                 <div
                   onClick={() => onSelectTemplate(template)}
-                  className="relative aspect-16/10 bg-slate-900 cursor-pointer overflow-hidden flex items-center justify-center p-2"
+                  className="relative aspect-4/3 bg-slate-100/80 cursor-pointer overflow-hidden flex items-center justify-center p-3 border-b border-slate-100"
                 >
                   {template.imageUrl ? (
                     <img
                       src={template.imageUrl}
                       alt={title}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-102"
+                      className="max-w-full max-h-full object-contain shadow-xs rounded-sm transition-transform duration-300 group-hover:scale-102"
                       referrerPolicy="no-referrer"
                     />
                   ) : template.svgBackground ? (

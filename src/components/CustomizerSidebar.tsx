@@ -27,6 +27,9 @@ import {
   Briefcase,
   Building,
   RotateCcw,
+  FileText,
+  Plus,
+  Check,
 } from 'lucide-react';
 
 interface CustomizerSidebarProps {
@@ -41,6 +44,8 @@ interface CustomizerSidebarProps {
   onOpenAiAssistant: () => void;
   adminSettings: AdminSettings;
   currentLanguage: Language;
+  onToggleOptionalText: (enabled: boolean) => void;
+  isOptionalTextActive: boolean;
 }
 
 export const CustomizerSidebar: React.FC<CustomizerSidebarProps> = ({
@@ -55,6 +60,8 @@ export const CustomizerSidebar: React.FC<CustomizerSidebarProps> = ({
   onOpenAiAssistant,
   adminSettings,
   currentLanguage,
+  onToggleOptionalText,
+  isOptionalTextActive,
 }) => {
   const t = UI_TRANSLATIONS[currentLanguage];
   const isRtl = currentLanguage === 'ar';
@@ -159,6 +166,71 @@ export const CustomizerSidebar: React.FC<CustomizerSidebarProps> = ({
               className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#00A3E0]/30 focus:border-[#00A3E0] transition-all text-slate-900"
             />
           </div>
+
+          {/* Optional Text Box Setup */}
+          <div className="p-3 bg-slate-50/90 rounded-xl border border-slate-200/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-[#00A3E0]" />
+                <span>{t.optionalTextBox}</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => onToggleOptionalText(!isOptionalTextActive)}
+                className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
+                  isOptionalTextActive ? 'bg-[#00A3E0]' : 'bg-slate-300'
+                }`}
+                title="Toggle optional text box"
+              >
+                <div
+                  className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform absolute top-0.5 ${
+                    isOptionalTextActive ? 'end-0.5' : 'start-0.5'
+                  }`}
+                />
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-500 leading-snug">{t.optionalTextDesc}</p>
+
+            {isOptionalTextActive && (
+              <div className="space-y-2 pt-1 animate-in fade-in duration-150">
+                <input
+                  type="text"
+                  dir="auto"
+                  value={elements.find((el) => el.id === 'optional')?.text || employeeData.optionalText || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    onUpdateEmployeeData({ optionalText: val });
+                    onUpdateElement('optional', { text: val, isVisible: true });
+                  }}
+                  placeholder={t.optionalTextPlaceholder}
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#00A3E0]/30 focus:border-[#00A3E0] transition-all text-slate-900"
+                />
+
+                {/* Quick Presets */}
+                <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                  {[
+                    { label: currentLanguage === 'ar' ? 'المركز' : 'Center', text: currentLanguage === 'ar' ? 'مركز رؤية لجراحة القلب والأوعية' : 'Heart & Vascular Center' },
+                    { label: currentLanguage === 'ar' ? 'الرقم' : 'ID', text: 'ID: VM-884920' },
+                    { label: currentLanguage === 'ar' ? 'اعتماد' : 'Accredited', text: currentLanguage === 'ar' ? 'معتمد من سباهي و JCI' : 'CBAHI & JCI Accredited' },
+                    { label: currentLanguage === 'ar' ? 'شعار' : 'Slogan', text: currentLanguage === 'ar' ? 'التميز في الرعاية الصحية' : 'Excellence in Healthcare' },
+                  ].map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => {
+                        onUpdateEmployeeData({ optionalText: preset.text });
+                        onUpdateElement('optional', { text: preset.text, isVisible: true });
+                        onSelectElement('optional');
+                      }}
+                      className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-white border border-slate-200 hover:border-[#00A3E0] hover:text-[#005A9C] text-slate-600 transition-colors cursor-pointer"
+                    >
+                      + {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </section>
 
         <hr className="border-slate-100" />
@@ -170,13 +242,13 @@ export const CustomizerSidebar: React.FC<CustomizerSidebarProps> = ({
               {currentLanguage === 'ar' ? 'تنسيق النص المحدد' : 'Format Selected Element'}
             </label>
 
-            {/* Switch target element (Name vs Role) */}
+            {/* Switch target element (Name vs Role vs Optional) */}
             <div className="flex items-center p-0.5 bg-slate-100 rounded-lg border border-slate-200">
               <button
                 onClick={() => onSelectElement('name')}
                 className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
                   activeElement?.id === 'name'
-                    ? 'bg-white text-[#0B2545] shadow-xs'
+                    ? 'bg-white text-[#0B2545] shadow-xs font-bold'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -186,11 +258,29 @@ export const CustomizerSidebar: React.FC<CustomizerSidebarProps> = ({
                 onClick={() => onSelectElement('role')}
                 className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
                   activeElement?.id === 'role'
-                    ? 'bg-white text-[#0B2545] shadow-xs'
+                    ? 'bg-white text-[#0B2545] shadow-xs font-bold'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {currentLanguage === 'ar' ? 'المسمى' : 'Role'}
+              </button>
+              <button
+                onClick={() => {
+                  if (!isOptionalTextActive) {
+                    onToggleOptionalText(true);
+                  }
+                  onSelectElement('optional');
+                }}
+                className={`px-2 py-1 text-xs font-semibold rounded-md transition-colors ${
+                  activeElement?.id === 'optional'
+                    ? 'bg-white text-[#00A3E0] shadow-xs font-bold'
+                    : isOptionalTextActive
+                    ? 'text-slate-700 hover:text-slate-900'
+                    : 'text-slate-400 hover:text-slate-600'
+                }`}
+                title="Format optional text box"
+              >
+                {t.optionalTabLabel}
               </button>
             </div>
           </div>

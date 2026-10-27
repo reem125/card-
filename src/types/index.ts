@@ -1,13 +1,14 @@
 export type Language = 'en' | 'ar';
 
 export type TemplateCategory =
+  | 'celebrations'
+  | 'internal-announcements'
+  | 'letterheads'
   | 'id-cards'
   | 'email-signatures'
   | 'linkedin-banners'
   | 'social-media'
-  | 'internal-announcements'
-  | 'event-graphics'
-  | 'celebrations';
+  | 'event-graphics';
 
 export interface SafeZone {
   minXPercent: number; // e.g. 5
@@ -47,6 +48,7 @@ export interface EmployeeData {
   fullName: string;
   roleTitle: string;
   department: string;
+  optionalText?: string;
   employeeId?: string;
   email?: string;
   phone?: string;
@@ -69,6 +71,9 @@ export interface CanvasTextElement {
   isBold?: boolean;
   isItalic?: boolean;
   opacity?: number;
+  isVisible?: boolean;
+  labelEn?: string;
+  labelAr?: string;
 }
 
 export interface BrandColor {

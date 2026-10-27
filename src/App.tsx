@@ -29,6 +29,9 @@ import {
   ShieldCheck,
   ChevronRight,
   SlidersHorizontal,
+  Plus,
+  Check,
+  FileText,
 } from 'lucide-react';
 
 export default function App() {
@@ -44,21 +47,41 @@ export default function App() {
   // Active View Mode: 'gallery' or 'editor'
   const [activeView, setActiveView] = useState<'gallery' | 'editor'>('gallery');
 
-  // Templates Repository
+  // Templates Repository - Authorized Vision Medical Templates Only
   const [templates, setTemplates] = useState<Template[]>(() => {
-    const saved = localStorage.getItem('vm_templates');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return INITIAL_TEMPLATES;
+    try {
+      // Clear legacy unauthorized templates
+      localStorage.removeItem('vm_templates');
+      localStorage.removeItem('vm_templates_v2');
+      localStorage.removeItem('vm_templates_v3');
+      const saved = localStorage.getItem('vm_templates_v4');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (
+          Array.isArray(parsed) &&
+          parsed.length > 0 &&
+          parsed.every(
+            (t) =>
+              t.imageUrl &&
+              (t.id.startsWith('vm-ramadan') ||
+                t.id.startsWith('vm-eid') ||
+                t.id.startsWith('vm-welcome') ||
+                t.id.startsWith('vm-official'))
+          )
+        ) {
+          return parsed;
+        }
       }
+    } catch {
+      // fallback
     }
     return INITIAL_TEMPLATES;
   });
 
-  // Selected Template
-  const [selectedTemplate, setSelectedTemplate] = useState<Template>(templates[0]);
+  // Selected Template (default to first authorized greeting card)
+  const [selectedTemplate, setSelectedTemplate] = useState<Template>(
+    templates[0] || INITIAL_TEMPLATES[0]
+  );
 
   // Employee Personalization Details
   const [employeeData, setEmployeeData] = useState<EmployeeData>(() => {
@@ -71,48 +94,67 @@ export default function App() {
       }
     }
     return {
-      fullName: 'Dr. Ahmed Al-Otaibi',
-      roleTitle: 'Senior Consultant Cardiologist',
-      department: 'Heart & Vascular Center',
+      fullName: 'د. أحمد العتيبي',
+      roleTitle: 'استشاري أول جراحة العيون والشبكية',
+      department: 'مجموعة مراكز رؤية الطبية',
       employeeId: 'VM-884920',
-      email: 'a.otaibi@visionmedical.sa',
+      email: 'a.otaibi@visionmedicalksa.com',
       phone: '+966 11 000 0000',
     };
   });
 
-  // Canvas Text Elements (Name & Role)
+  // Canvas Text Elements (Name, Role, and Optional Text Box)
+  const initialTpl = templates[0] || INITIAL_TEMPLATES[0];
   const [elements, setElements] = useState<CanvasTextElement[]>([
     {
       id: 'name',
-      text: 'Dr. Ahmed Al-Otaibi',
+      text: 'د. أحمد العتيبي',
       fontFamily: 'Cairo',
-      fontSize: templates[0]?.defaultFontSize || 34,
+      fontSize: initialTpl?.defaultFontSize || 36,
       fontWeight: '700',
-      color: templates[0]?.defaultColor || '#FFFFFF',
-      alignment: templates[0]?.defaultAlignment || 'left',
-      xPercent: templates[0]?.defaultNameX || 52,
-      yPercent: templates[0]?.defaultNameY || 42,
-      letterSpacing: 0.5,
+      color: initialTpl?.defaultColor || '#0B2545',
+      alignment: initialTpl?.defaultAlignment || 'center',
+      xPercent: initialTpl?.defaultNameX || 50,
+      yPercent: initialTpl?.defaultNameY || 76,
+      letterSpacing: 0,
       lineHeight: 1.2,
-      hasShadow: true,
+      hasShadow: initialTpl?.theme === 'dark',
+      isVisible: true,
     },
     {
       id: 'role',
-      text: 'Senior Consultant Cardiologist',
+      text: 'استشاري أول جراحة العيون والشبكية',
       fontFamily: 'Tajawal',
-      fontSize: templates[0]?.defaultRoleFontSize || 20,
+      fontSize: initialTpl?.defaultRoleFontSize || 22,
       fontWeight: '500',
-      color: templates[0]?.defaultRoleColor || '#38BDF8',
-      alignment: templates[0]?.defaultAlignment || 'left',
-      xPercent: templates[0]?.defaultRoleX || 52,
-      yPercent: templates[0]?.defaultRoleY || 53,
+      color: initialTpl?.defaultRoleColor || '#00A3E0',
+      alignment: initialTpl?.defaultAlignment || 'center',
+      xPercent: initialTpl?.defaultRoleX || 50,
+      yPercent: initialTpl?.defaultRoleY || 82,
       letterSpacing: 0,
       lineHeight: 1.2,
       hasShadow: false,
+      isVisible: true,
+    },
+    {
+      id: 'optional',
+      text: 'مجموعة مراكز رؤية الطبية',
+      fontFamily: 'Cairo',
+      fontSize: 18,
+      fontWeight: '500',
+      color: '#005A9C',
+      alignment: initialTpl?.defaultAlignment || 'center',
+      xPercent: initialTpl?.defaultNameX || 50,
+      yPercent: 88,
+      letterSpacing: 0,
+      lineHeight: 1.2,
+      hasShadow: false,
+      isVisible: false,
     },
   ]);
 
   const [selectedElementId, setSelectedElementId] = useState<string | null>('name');
+  const [isOptionalTextActive, setIsOptionalTextActive] = useState<boolean>(false);
 
   // Admin Governance Settings
   const [adminSettings, setAdminSettings] = useState<AdminSettings>(() => {
@@ -152,7 +194,7 @@ export default function App() {
 
   // Persist templates to localStorage
   useEffect(() => {
-    localStorage.setItem('vm_templates', JSON.stringify(templates));
+    localStorage.setItem('vm_templates_v4', JSON.stringify(templates));
   }, [templates]);
 
   // Persist employee details
@@ -165,10 +207,24 @@ export default function App() {
     localStorage.setItem('vm_admin_settings', JSON.stringify(adminSettings));
   }, [adminSettings]);
 
+  // Toggle optional text box
+  const handleToggleOptionalText = (enabled?: boolean) => {
+    const newState = enabled !== undefined ? enabled : !isOptionalTextActive;
+    setIsOptionalTextActive(newState);
+    handleUpdateElement('optional', { isVisible: newState });
+    if (newState) {
+      setSelectedElementId('optional');
+    } else if (selectedElementId === 'optional') {
+      setSelectedElementId('name');
+    }
+  };
+
   // Handle template selection from gallery
   const handleSelectTemplate = (template: Template) => {
     setSelectedTemplate(template);
-    // Initialize elements matching template presets
+    const existingOptional = elements.find((el) => el.id === 'optional');
+
+    // Initialize elements matching template presets, preserving optional text box
     setElements([
       {
         id: 'name',
@@ -183,6 +239,7 @@ export default function App() {
         letterSpacing: currentLanguage === 'ar' ? 0 : 0.5,
         lineHeight: 1.2,
         hasShadow: template.theme === 'dark',
+        isVisible: true,
       },
       {
         id: 'role',
@@ -197,6 +254,25 @@ export default function App() {
         letterSpacing: 0,
         lineHeight: 1.2,
         hasShadow: false,
+        isVisible: true,
+      },
+      {
+        id: 'optional',
+        text:
+          existingOptional?.text ||
+          employeeData.optionalText ||
+          (currentLanguage === 'ar' ? 'مركز رؤية لجراحة القلب' : 'Heart & Vascular Center'),
+        fontFamily: currentLanguage === 'ar' ? 'Cairo' : 'Plus Jakarta Sans',
+        fontSize: Math.max(14, Math.round(template.defaultFontSize * 0.45)),
+        fontWeight: '500',
+        color: template.theme === 'dark' ? '#E0F2FE' : '#005A9C',
+        alignment: template.defaultAlignment,
+        xPercent: template.defaultRoleX || template.defaultNameX,
+        yPercent: Math.min(90, (template.defaultRoleY || template.defaultNameY + 11) + 11),
+        letterSpacing: 0,
+        lineHeight: 1.2,
+        hasShadow: false,
+        isVisible: isOptionalTextActive,
       },
     ]);
     setActiveView('editor');
@@ -242,6 +318,16 @@ export default function App() {
             fontSize: selectedTemplate.defaultRoleFontSize || Math.round(selectedTemplate.defaultFontSize * 0.6),
             alignment: selectedTemplate.defaultAlignment,
             color: selectedTemplate.defaultRoleColor || (selectedTemplate.theme === 'dark' ? '#38BDF8' : '#005A9C'),
+          };
+        }
+        if (el.id === 'optional') {
+          return {
+            ...el,
+            xPercent: selectedTemplate.defaultRoleX || selectedTemplate.defaultNameX,
+            yPercent: Math.min(90, (selectedTemplate.defaultRoleY || selectedTemplate.defaultNameY + 11) + 11),
+            fontSize: Math.max(14, Math.round(selectedTemplate.defaultFontSize * 0.45)),
+            alignment: selectedTemplate.defaultAlignment,
+            color: selectedTemplate.theme === 'dark' ? '#E0F2FE' : '#005A9C',
           };
         }
         return el;
@@ -421,14 +507,22 @@ export default function App() {
               selectedTemplate={selectedTemplate}
               onSelectTemplate={handleSelectTemplate}
               currentLanguage={currentLanguage}
+              optionalText={elements.find((el) => el.id === 'optional')?.text || employeeData.optionalText}
+              isOptionalTextActive={isOptionalTextActive}
+              onToggleOptionalText={handleToggleOptionalText}
+              onUpdateOptionalText={(txt) => {
+                setEmployeeData((prev) => ({ ...prev, optionalText: txt }));
+                handleUpdateElement('optional', { text: txt, isVisible: true });
+                setIsOptionalTextActive(true);
+              }}
             />
           </div>
         ) : (
           /* Interactive Editor Workspace View */
           <div className="flex-1 flex flex-col space-y-4">
-            {/* Top Workspace Bar */}
-            <div className="flex items-center justify-between gap-4 bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs">
-              <div className="flex items-center gap-3">
+            {/* Top Workspace Bar (including Change Template & Optional Text Box) */}
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <button
                   onClick={() => setActiveView('gallery')}
                   className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors"
@@ -436,8 +530,34 @@ export default function App() {
                   <Layers className="w-3.5 h-3.5" />
                   <span>{currentLanguage === 'ar' ? 'تغيير القالب' : 'Change Template'}</span>
                 </button>
-                <div className="h-4 w-px bg-slate-200" />
-                <span className="text-xs font-bold text-[#0B2545]">
+
+                <div className="h-4 w-px bg-slate-200 hidden sm:block" />
+
+                {/* Optional Text Box Button in Change Template part */}
+                <button
+                  onClick={() => handleToggleOptionalText()}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer transition-all border ${
+                    isOptionalTextActive
+                      ? 'bg-[#E0F2FE] hover:bg-[#BAE6FD] text-[#005A9C] border-[#00A3E0]/40 font-bold shadow-2xs'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                  }`}
+                  title={isOptionalTextActive ? 'Optional text box is active on canvas' : 'Add an optional text box to this template'}
+                >
+                  {isOptionalTextActive ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-[#00A3E0]" />
+                      <span>{t.optionalTextActive}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5 text-[#00A3E0]" />
+                      <span>{t.addOptionalText}</span>
+                    </>
+                  )}
+                </button>
+
+                <div className="h-4 w-px bg-slate-200 hidden sm:block" />
+                <span className="text-xs font-bold text-[#0B2545] hidden md:inline">
                   {currentLanguage === 'ar' ? selectedTemplate.titleAr : selectedTemplate.titleEn}
                 </span>
               </div>
@@ -506,6 +626,8 @@ export default function App() {
                   onOpenAiAssistant={() => setIsAiModalOpen(true)}
                   adminSettings={adminSettings}
                   currentLanguage={currentLanguage}
+                  onToggleOptionalText={handleToggleOptionalText}
+                  isOptionalTextActive={isOptionalTextActive}
                 />
               </div>
             </div>

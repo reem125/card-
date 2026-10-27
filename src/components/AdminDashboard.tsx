@@ -637,13 +637,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     }
                     className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 text-slate-900"
                   >
+                    <option value="celebrations">Celebrations & Holidays</option>
+                    <option value="internal-announcements">Internal Announcements</option>
+                    <option value="letterheads">Letterhead, Header & Footer</option>
                     <option value="id-cards">Employee ID & Badges</option>
                     <option value="email-signatures">Email Signatures</option>
                     <option value="linkedin-banners">LinkedIn Covers</option>
                     <option value="social-media">Social Media Posts</option>
-                    <option value="internal-announcements">Internal Announcements</option>
                     <option value="event-graphics">Events & Conferences</option>
-                    <option value="celebrations">Celebrations & Holidays</option>
                   </select>
                 </div>
 
