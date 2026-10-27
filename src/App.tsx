@@ -22,6 +22,8 @@ import {
   fetchCloudStatusApi,
   fetchAdminSettingsApi,
   saveAdminSettingsApi,
+  loginAdminApi,
+  hasAdminSession,
 } from './services/templateService';
 import { Header } from './components/Header';
 import { TemplateGallery } from './components/TemplateGallery';
@@ -543,8 +545,18 @@ export default function App() {
         currentLanguage={currentLanguage}
         onLanguageChange={setCurrentLanguage}
         isAdmin={isAdmin}
-        onToggleAdmin={() => {
+        onToggleAdmin={async () => {
           const next = !isAdmin;
+          if (next && !hasAdminSession()) {
+            const password = window.prompt(
+              currentLanguage === 'ar' ? 'أدخل كلمة مرور المسؤول' : 'Enter the admin password'
+            );
+            if (!password) return;
+            if (!(await loginAdminApi(password))) {
+              window.alert(currentLanguage === 'ar' ? 'كلمة المرور غير صحيحة' : 'Wrong admin password');
+              return;
+            }
+          }
           setIsAdmin(next);
           // Re-sync with full list if entering admin mode
           fetchTemplatesFromApi(next).then((list) => {
