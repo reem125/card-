@@ -3,13 +3,31 @@ import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
+import {
+  getAllTemplates,
+  createTemplate,
+  updateTemplate,
+  deleteTemplate,
+  uploadImageFile,
+  getCloudDiagnostics,
+  seedInitialTemplates,
+  getAdminSettings,
+  saveAdminSettings,
+  isSupabaseConfigured,
+} from './server/supabase';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
-app.use(express.json({ limit: '10mb' }));
+// Increase JSON body limit to 50MB to handle high-resolution template image uploads
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Serve uploaded template files statically
+const uploadsPath = path.resolve(process.cwd(), 'public', 'uploads');
+app.use('/uploads', express.static(uploadsPath));
 
 // Server-side Gemini AI client initialization
 const ai = new GoogleGenAI({
@@ -21,12 +39,152 @@ const ai = new GoogleGenAI({
   },
 });
 
-// API Routes
+// ==========================================
+// 1. HEALTH & SYSTEM DIAGNOSTICS
+// ==========================================
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    supabaseConfigured: isSupabaseConfigured(),
+  });
 });
 
-// AI Smart Suggestion Endpoint
+app.get('/api/admin/sync-status', async (req, res) => {
+  try {
+    const status = await getCloudDiagnostics();
+    res.json({ success: true, status });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==========================================
+// 2. TEMPLATES API (Shared across all employees)
+// ==========================================
+// GET /api/templates
+// Returns active templates for employees (or all if ?all=true)
+app.get('/api/templates', async (req, res) => {
+  try {
+    const includeArchived = req.query.all === 'true';
+    const templates = await getAllTemplates(includeArchived);
+
+    // Set cache control for performance with fast revalidation
+    res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    res.json({ success: true, count: templates.length, templates });
+  } catch (error: any) {
+    console.error('Error fetching templates:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==========================================
+// 3. ADMIN TEMPLATE MANAGEMENT API
+// ==========================================
+// POST /api/upload - Uploads template image to Supabase Storage or persistent file server
+app.post('/api/upload', async (req, res) => {
+  try {
+    const { base64Data, fileName, mimeType = 'image/png' } = req.body;
+    if (!base64Data) {
+      return res.status(400).json({ success: false, error: 'Missing base64Data' });
+    }
+
+    const uploadResult = await uploadImageFile(
+      base64Data,
+      fileName || 'template-image',
+      mimeType
+    );
+
+    res.json({ success: true, ...uploadResult });
+  } catch (error: any) {
+    console.error('Error handling upload:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/admin/templates - Create and publish a new template
+app.post('/api/admin/templates', async (req, res) => {
+  try {
+    const templateData = req.body;
+    if (!templateData || !templateData.titleEn) {
+      return res.status(400).json({ success: false, error: 'Template title is required' });
+    }
+
+    const created = await createTemplate(templateData);
+    res.json({ success: true, template: created });
+  } catch (error: any) {
+    console.error('Error creating template:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// PUT /api/admin/templates/:id - Update template (including Archive/Reactivate)
+app.put('/api/admin/templates/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const updated = await updateTemplate(id, updates);
+    if (!updated) {
+      return res.status(404).json({ success: false, error: 'Template not found' });
+    }
+
+    res.json({ success: true, template: updated });
+  } catch (error: any) {
+    console.error('Error updating template:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// DELETE /api/admin/templates/:id - Delete template
+app.delete('/api/admin/templates/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await deleteTemplate(id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, error: 'Template not found' });
+    }
+
+    res.json({ success: true, message: 'Template removed successfully' });
+  } catch (error: any) {
+    console.error('Error deleting template:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/admin/reseed - Force sync or reseed official templates
+app.post('/api/admin/reseed', async (req, res) => {
+  try {
+    const count = await seedInitialTemplates();
+    res.json({ success: true, message: `Seeded ${count} templates to cloud database.` });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET & PUT /api/admin/settings - Brand governance settings
+app.get('/api/admin/settings', async (req, res) => {
+  try {
+    const settings = await getAdminSettings();
+    res.json({ success: true, settings });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.put('/api/admin/settings', async (req, res) => {
+  try {
+    const settings = req.body;
+    await saveAdminSettings(settings);
+    res.json({ success: true, settings });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==========================================
+// 4. AI SMART RECOMMENDATIONS API
+// ==========================================
 app.post('/api/ai/smart-recommendations', async (req, res) => {
   try {
     const {
@@ -89,10 +247,9 @@ Return a JSON object conforming exactly to this structure:
     return res.json({ success: true, recommendation: parsed });
   } catch (error: any) {
     console.error('Error generating AI recommendation:', error);
-    // Provide a robust smart fallback matching Vision Medical brand rules
     const isArabic = req.body?.language === 'ar' || /[\u0600-\u06FF]/.test(req.body?.employeeName || '');
     const isDark = req.body?.theme === 'dark';
-    
+
     return res.json({
       success: true,
       recommendation: {
@@ -113,6 +270,9 @@ Return a JSON object conforming exactly to this structure:
   }
 });
 
+// ==========================================
+// 5. SERVER BOOTSTRAP & STATIC ASSETS
+// ==========================================
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({

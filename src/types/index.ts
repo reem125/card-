@@ -44,6 +44,9 @@ export interface Template {
   isActive: boolean;
   isPopular?: boolean;
   defaultElements?: CanvasTextElement[];
+  createdAt?: string;
+  updatedAt?: string;
+  isCustom?: boolean;
 }
 
 export interface EmployeeData {
@@ -103,3 +106,17 @@ export interface AdminSettings {
   approvedColors: BrandColor[];
   approvedFonts: string[];
 }
+
+export interface CloudSyncStatus {
+  provider: 'supabase' | 'local_fallback';
+  connected: boolean;
+  tableExists: boolean;
+  storageExists: boolean;
+  totalTemplates: number;
+  activeTemplates: number;
+  lastSyncTime: string;
+  message?: string;
+  supabaseUrl?: string;
+  hasServiceRoleKey?: boolean;
+}
+

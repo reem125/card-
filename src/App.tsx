@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   AdminSettings,
   CanvasTextElement,
+  CloudSyncStatus,
   EmployeeData,
   Language,
   Template,
@@ -13,6 +14,15 @@ import {
   UI_TRANSLATIONS,
   VISION_LOGO_URL,
 } from './data/brandAssets';
+import {
+  fetchTemplatesFromApi,
+  createTemplateApi,
+  updateTemplateApi,
+  deleteTemplateApi,
+  fetchCloudStatusApi,
+  fetchAdminSettingsApi,
+  saveAdminSettingsApi,
+} from './services/templateService';
 import { Header } from './components/Header';
 import { TemplateGallery } from './components/TemplateGallery';
 import { TemplateCanvas } from './components/TemplateCanvas';
@@ -191,23 +201,64 @@ export default function App() {
   const [showSafeZoneGuides, setShowSafeZoneGuides] = useState<boolean>(true);
   const [isWideCanvas, setIsWideCanvas] = useState<boolean>(false);
 
+  const [cloudStatus, setCloudStatus] = useState<CloudSyncStatus | null>(null);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+
   // Sync RTL / LTR document direction and language attribute
   useEffect(() => {
     document.documentElement.lang = currentLanguage;
     document.documentElement.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
   }, [currentLanguage]);
 
-  // Persist templates to localStorage
-  useEffect(() => {
-    localStorage.setItem('vm_templates_v5', JSON.stringify(templates));
-  }, [templates]);
+  // Centralized Cloud Synchronization
+  const syncTemplates = useCallback(async () => {
+    try {
+      setIsSyncing(true);
+      const remote = await fetchTemplatesFromApi(isAdmin);
+      if (remote && remote.length > 0) {
+        setTemplates((prev) => {
+          const prevKey = prev.map((t) => `${t.id}-${t.isActive}-${t.updatedAt || ''}`).join(',');
+          const remoteKey = remote.map((t) => `${t.id}-${t.isActive}-${t.updatedAt || ''}`).join(',');
+          if (prevKey !== remoteKey) {
+            localStorage.setItem('vm_templates_v5', JSON.stringify(remote));
+            return remote;
+          }
+          return prev;
+        });
+      }
+    } catch (err) {
+      console.warn('Sync error:', err);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [isAdmin]);
 
-  // Persist employee details
+  // Initial load
+  useEffect(() => {
+    syncTemplates();
+    fetchCloudStatusApi().then(setCloudStatus).catch(() => {});
+    fetchAdminSettingsApi().then((s) => {
+      if (s) setAdminSettings(s);
+    }).catch(() => {});
+  }, [syncTemplates]);
+
+  // Real-time automatic polling every 10 seconds and on window focus
+  useEffect(() => {
+    const interval = setInterval(syncTemplates, 10000);
+    const handleFocus = () => syncTemplates();
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [syncTemplates]);
+
+  // Persist employee personal preferences locally
   useEffect(() => {
     localStorage.setItem('vm_employee_data', JSON.stringify(employeeData));
   }, [employeeData]);
 
-  // Persist admin settings
+  // Persist admin settings locally
   useEffect(() => {
     localStorage.setItem('vm_admin_settings', JSON.stringify(adminSettings));
   }, [adminSettings]);
@@ -426,23 +477,60 @@ export default function App() {
     );
   };
 
-  // Admin template operations
-  const handleAddTemplate = (newTemplate: Template) => {
-    setTemplates((prev) => [newTemplate, ...prev]);
+  // Admin template operations with cloud persistence
+  const handleAddTemplate = async (newTemplate: Template) => {
+    try {
+      const created = await createTemplateApi(newTemplate);
+      setTemplates((prev) => [created, ...prev.filter((t) => t.id !== created.id)]);
+      setSelectedTemplate(created);
+    } catch (err) {
+      console.error('Failed to create template:', err);
+      // Fallback local update
+      setTemplates((prev) => [newTemplate, ...prev]);
+      setSelectedTemplate(newTemplate);
+    }
   };
 
-  const handleUpdateTemplate = (id: string, updates: Partial<Template>) => {
-    setTemplates((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
-    );
+  const handleUpdateTemplate = async (id: string, updates: Partial<Template>) => {
+    try {
+      setTemplates((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
+      );
+      if (selectedTemplate.id === id) {
+        setSelectedTemplate((prev) => ({ ...prev, ...updates }));
+      }
+      const updated = await updateTemplateApi(id, updates);
+      setTemplates((prev) =>
+        prev.map((t) => (t.id === id ? updated : t))
+      );
+      if (selectedTemplate.id === id) {
+        setSelectedTemplate(updated);
+      }
+    } catch (err) {
+      console.error('Failed to update template:', err);
+    }
   };
 
-  const handleDeleteTemplate = (id: string) => {
-    setTemplates((prev) => prev.filter((t) => t.id !== id));
+  const handleDeleteTemplate = async (id: string) => {
+    try {
+      await deleteTemplateApi(id);
+      setTemplates((prev) => {
+        const remaining = prev.filter((t) => t.id !== id);
+        if (selectedTemplate.id === id && remaining.length > 0) {
+          setSelectedTemplate(remaining[0]);
+        }
+        return remaining;
+      });
+    } catch (err) {
+      console.error('Failed to delete template:', err);
+    }
   };
 
-  const handleUpdateAdminSettings = (newSettings: Partial<AdminSettings>) => {
-    setAdminSettings((prev) => ({ ...prev, ...newSettings }));
+  const handleUpdateAdminSettings = async (newSettings: Partial<AdminSettings>) => {
+    const updated = { ...adminSettings, ...newSettings };
+    setAdminSettings(updated);
+    localStorage.setItem('vm_admin_settings', JSON.stringify(updated));
+    await saveAdminSettingsApi(updated);
   };
 
   const t = UI_TRANSLATIONS[currentLanguage];
@@ -455,7 +543,14 @@ export default function App() {
         currentLanguage={currentLanguage}
         onLanguageChange={setCurrentLanguage}
         isAdmin={isAdmin}
-        onToggleAdmin={() => setIsAdmin(!isAdmin)}
+        onToggleAdmin={() => {
+          const next = !isAdmin;
+          setIsAdmin(next);
+          // Re-sync with full list if entering admin mode
+          fetchTemplatesFromApi(next).then((list) => {
+            if (list && list.length > 0) setTemplates(list);
+          });
+        }}
         currentStep={currentStep}
         onStepClick={(step) => {
           setCurrentStep(step);
@@ -466,6 +561,8 @@ export default function App() {
         onOpenExport={() => setIsExportModalOpen(true)}
         hasSelectedTemplate={Boolean(selectedTemplate)}
         onOpenAiAssistant={() => setIsAiModalOpen(true)}
+        isSyncing={isSyncing}
+        cloudConnected={cloudStatus?.connected}
       />
 
       {/* Main App Body */}

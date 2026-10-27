@@ -13,6 +13,8 @@ interface HeaderProps {
   onOpenExport: () => void;
   hasSelectedTemplate: boolean;
   onOpenAiAssistant?: () => void;
+  isSyncing?: boolean;
+  cloudConnected?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -25,6 +27,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenExport,
   hasSelectedTemplate,
   onOpenAiAssistant,
+  isSyncing,
+  cloudConnected,
 }) => {
   const t = UI_TRANSLATIONS[currentLanguage];
   const isRtl = currentLanguage === 'ar';
@@ -60,9 +64,15 @@ export const Header: React.FC<HeaderProps> = ({
                 رؤية الطبية
               </span>
             </div>
-            <span className="text-xs text-slate-500 font-medium tracking-wide">
-              {t.appSubtitle}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500 font-medium tracking-wide">
+                {t.appSubtitle}
+              </span>
+              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200/80 shadow-2xs">
+                <span className={`w-1.5 h-1.5 rounded-full ${isSyncing ? 'bg-sky-500 animate-ping' : 'bg-emerald-500'}`} />
+                <span>{cloudConnected ? 'Supabase Synced' : 'Cloud Synced'}</span>
+              </span>
+            </div>
           </div>
         </div>
 
