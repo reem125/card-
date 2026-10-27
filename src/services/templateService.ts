@@ -5,6 +5,40 @@ import { Template, AdminSettings, CloudSyncStatus } from '../types';
  * (backed by Supabase PostgreSQL & Storage with persistent server fallback)
  */
 
+const ADMIN_PASSWORD_KEY = 'vm-admin-password';
+
+function getAdminPassword(): string {
+  try {
+    return sessionStorage.getItem(ADMIN_PASSWORD_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+function adminHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  return { ...extra, 'x-admin-password': getAdminPassword() };
+}
+
+/**
+ * Verify the admin password with the server and remember it for this browser tab
+ */
+export async function loginAdminApi(password: string): Promise<boolean> {
+  const res = await fetch('/api/admin/login', {
+    method: 'POST',
+    headers: adminHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ password }),
+  });
+  if (!res.ok) return false;
+  try {
+    sessionStorage.setItem(ADMIN_PASSWORD_KEY, password);
+  } catch {}
+  return true;
+}
+
+export function hasAdminSession(): boolean {
+  return !!getAdminPassword();
+}
+
 export async function fetchTemplatesFromApi(includeAll = false): Promise<Template[]> {
   try {
     const url = `/api/templates${includeAll ? '?all=true' : ''}`;
@@ -45,7 +79,7 @@ export async function uploadTemplateImage(
   // 3. Send to server upload endpoint
   const res = await fetch('/api/upload', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: adminHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({
       base64Data,
       fileName: file.name,
@@ -111,7 +145,7 @@ function readFileAsBase64(file: File): Promise<string> {
 export async function createTemplateApi(template: Template): Promise<Template> {
   const res = await fetch('/api/admin/templates', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: adminHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(template),
   });
 
@@ -137,7 +171,7 @@ export async function updateTemplateApi(
 ): Promise<Template> {
   const res = await fetch(`/api/admin/templates/${encodeURIComponent(id)}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: adminHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(updates),
   });
 
@@ -160,6 +194,7 @@ export async function updateTemplateApi(
 export async function deleteTemplateApi(id: string): Promise<boolean> {
   const res = await fetch(`/api/admin/templates/${encodeURIComponent(id)}`, {
     method: 'DELETE',
+    headers: adminHeaders(),
   });
 
   if (!res.ok) {
@@ -187,7 +222,7 @@ export async function fetchCloudStatusApi(): Promise<CloudSyncStatus> {
  * Reseed official Vision Medical templates
  */
 export async function reseedTemplatesApi(): Promise<string> {
-  const res = await fetch('/api/admin/reseed', { method: 'POST' });
+  const res = await fetch('/api/admin/reseed', { method: 'POST', headers: adminHeaders() });
   const data = await res.json();
   return data.message || 'Reseeded successfully';
 }
@@ -215,7 +250,7 @@ export async function saveAdminSettingsApi(settings: AdminSettings): Promise<boo
   try {
     const res = await fetch('/api/admin/settings', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: adminHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(settings),
     });
     return res.ok;
