@@ -2,7 +2,7 @@ import { Template, AdminSettings, CloudSyncStatus } from '../types';
 
 /**
  * Client service to communicate with the centralized template API
- * (backed by Supabase PostgreSQL & Storage with persistent server fallback)
+ * (backed by Postgres and Cloudinary, with a local file fallback)
  */
 
 const ADMIN_PASSWORD_KEY = 'vm-admin-password';
@@ -69,7 +69,7 @@ export async function fetchTemplatesFromApi(includeAll = false): Promise<Templat
  */
 export async function uploadTemplateImage(
   file: File
-): Promise<{ url: string; width: number; height: number; storage: 'supabase' | 'local' }> {
+): Promise<{ url: string; width: number; height: number; storage: 'cloudinary' | 'database' | 'local' }> {
   // 1. Read dimensions on client side
   const { width, height } = await getImageDimensions(file);
 
