@@ -84,6 +84,14 @@ export const CATEGORY_DEFINITIONS: Record<
   TemplateCategory,
   { labelEn: string; labelAr: string; icon: string; countHint: string; descriptionEn: string; descriptionAr: string }
 > = {
+  'certificates': {
+    labelEn: 'Training & Certificates',
+    labelAr: 'الشهادات والبرامج التدريبية',
+    icon: 'Award',
+    countHint: '2000 × 1414',
+    descriptionEn: 'Official Vision Medical Training Academy certificates of completion with verified accreditation.',
+    descriptionAr: 'شهادات الإتمام والتدريب الطبي الرسمية المعتمدة من أكاديمية رؤية الطبية للتدريب والتطوير.',
+  },
   'celebrations': {
     labelEn: 'Celebrations & Occasions',
     labelAr: 'المناسبات والأعياد',

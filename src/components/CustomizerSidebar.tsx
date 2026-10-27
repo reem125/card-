@@ -30,6 +30,9 @@ import {
   FileText,
   Plus,
   Check,
+  Award,
+  Calendar,
+  PenTool,
 } from 'lucide-react';
 
 interface CustomizerSidebarProps {
@@ -106,182 +109,412 @@ export const CustomizerSidebar: React.FC<CustomizerSidebarProps> = ({
       </div>
 
       <div className="p-5 flex-1 overflow-y-auto space-y-6">
-        {/* Step 2: Employee Information Inputs */}
-        <section className="space-y-3.5">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-slate-800 tracking-wide uppercase flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-slate-500" />
-              <span>{t.employeeNameLabel}</span>
-            </label>
-            <span className="text-[10px] text-slate-400 font-medium">
-              {currentLanguage === 'ar' ? 'عربي / English' : 'Arabic / English'}
-            </span>
-          </div>
-
-          <input
-            type="text"
-            dir="auto"
-            value={employeeData.fullName}
-            onChange={(e) => {
-              const val = e.target.value;
-              onUpdateEmployeeData({ fullName: val });
-              onUpdateElement('name', { text: val });
-            }}
-            placeholder={t.employeeNamePlaceholder}
-            className="w-full px-3.5 py-2.5 text-sm font-medium rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#00A3E0]/30 focus:border-[#00A3E0] transition-all text-slate-900"
-          />
-
-          {/* Job Title / Role */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-              <Briefcase className="w-3.5 h-3.5 text-slate-500" />
-              <span>{t.employeeRoleLabel}</span>
-            </label>
-            <input
-              type="text"
-              dir="auto"
-              value={employeeData.roleTitle}
-              onChange={(e) => {
-                const val = e.target.value;
-                onUpdateEmployeeData({ roleTitle: val });
-                onUpdateElement('role', { text: val });
-              }}
-              placeholder={t.employeeRolePlaceholder}
-              className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#00A3E0]/30 focus:border-[#00A3E0] transition-all text-slate-900"
-            />
-          </div>
-
-          {/* Department / Hospital */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-              <Building className="w-3.5 h-3.5 text-slate-500" />
-              <span>{t.departmentLabel}</span>
-            </label>
-            <input
-              type="text"
-              dir="auto"
-              value={employeeData.department}
-              onChange={(e) => onUpdateEmployeeData({ department: e.target.value })}
-              placeholder={t.departmentPlaceholder}
-              className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#00A3E0]/30 focus:border-[#00A3E0] transition-all text-slate-900"
-            />
-          </div>
-
-          {/* Optional Text Box Setup */}
-          <div className="p-3 bg-slate-50/90 rounded-xl border border-slate-200/80 space-y-2">
+        {/* Step 2: Information Inputs */}
+        {template.category === 'certificates' || elements.some((e) => e.id.startsWith('cert-')) ? (
+          /* ================= Certificate 5 Text Boxes + Optional ================= */
+          <section className="space-y-3.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <FileText className="w-3.5 h-3.5 text-[#00A3E0]" />
-                <span>{t.optionalTextBox}</span>
+              <label className="text-xs font-bold text-slate-800 tracking-wide uppercase flex items-center gap-1.5">
+                <Award className="w-3.5 h-3.5 text-[#00A3E0]" />
+                <span>{currentLanguage === 'ar' ? 'بيانات الشهادة التدريبية (5 حقول)' : 'Certificate Details (5 Fields)'}</span>
               </label>
-              <button
-                type="button"
-                onClick={() => onToggleOptionalText(!isOptionalTextActive)}
-                className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
-                  isOptionalTextActive ? 'bg-[#00A3E0]' : 'bg-slate-300'
-                }`}
-                title="Toggle optional text box"
-              >
-                <div
-                  className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform absolute top-0.5 ${
-                    isOptionalTextActive ? 'end-0.5' : 'start-0.5'
-                  }`}
-                />
-              </button>
+              <span className="text-[10px] text-slate-400 font-medium">
+                {currentLanguage === 'ar' ? '5 نصوص أساسية + اختياري' : '5 Core + Optional'}
+              </span>
             </div>
-            <p className="text-[11px] text-slate-500 leading-snug">{t.optionalTextDesc}</p>
 
-            {isOptionalTextActive && (
-              <div className="space-y-2 pt-1 animate-in fade-in duration-150">
+            {/* 1. Recipient Full Name */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-slate-500" />
+                  <span>{currentLanguage === 'ar' ? '1. اسم المتدرب / المستلم' : '1. Recipient Full Name'}</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => onSelectElement('cert-name')}
+                  className="text-[10px] text-[#00A3E0] hover:underline cursor-pointer"
+                >
+                  {currentLanguage === 'ar' ? 'تنسيق' : 'Format'}
+                </button>
+              </div>
+              <input
+                type="text"
+                dir="auto"
+                value={elements.find((el) => el.id === 'cert-name')?.text ?? employeeData.fullName}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  onUpdateEmployeeData({ fullName: val });
+                  onUpdateElement('cert-name', { text: val });
+                }}
+                placeholder={currentLanguage === 'ar' ? 'مثال: د. طارق بن عبد العزيز المنصور' : 'e.g. Dr. Tariq Al-Mansoor'}
+                className="w-full px-3.5 py-2.5 text-sm font-semibold rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#00A3E0]/30 focus:border-[#00A3E0] transition-all text-slate-900"
+              />
+            </div>
+
+            {/* 2. Program / Course Title */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                  <Briefcase className="w-3.5 h-3.5 text-slate-500" />
+                  <span>{currentLanguage === 'ar' ? '2. اسم الدورة / البرنامج التدريبي' : '2. Training Program Title'}</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => onSelectElement('cert-program')}
+                  className="text-[10px] text-[#00A3E0] hover:underline cursor-pointer"
+                >
+                  {currentLanguage === 'ar' ? 'تنسيق' : 'Format'}
+                </button>
+              </div>
+              <input
+                type="text"
+                dir="auto"
+                value={elements.find((el) => el.id === 'cert-program')?.text ?? ''}
+                onChange={(e) => onUpdateElement('cert-program', { text: e.target.value })}
+                placeholder={currentLanguage === 'ar' ? 'مثال: المناظير المتقدمة للجهاز الهضمي والتقنيات التشخيصية' : 'e.g. Advanced Gastrointestinal Endoscopy'}
+                className="w-full px-3.5 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#00A3E0]/30 focus:border-[#00A3E0] transition-all text-slate-900"
+              />
+            </div>
+
+            {/* 3. Accreditation, Hours & Date */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                  <span>{currentLanguage === 'ar' ? '3. الاعتماد والساعات والتاريخ' : '3. Accreditation, Hours & Date'}</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => onSelectElement('cert-accreditation')}
+                  className="text-[10px] text-[#00A3E0] hover:underline cursor-pointer"
+                >
+                  {currentLanguage === 'ar' ? 'تنسيق' : 'Format'}
+                </button>
+              </div>
+              <input
+                type="text"
+                dir="auto"
+                value={elements.find((el) => el.id === 'cert-accreditation')?.text ?? ''}
+                onChange={(e) => onUpdateElement('cert-accreditation', { text: e.target.value })}
+                placeholder={currentLanguage === 'ar' ? 'مثال: معتمد بـ 15 ساعة تعليم طبي مستمر · 27 أكتوبر 2026' : 'e.g. CME Accredited: 15 Credit Hours · 27 October 2026'}
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#00A3E0]/30 focus:border-[#00A3E0] transition-all text-slate-900"
+              />
+            </div>
+
+            {/* 4 & 5. Signatories Grid */}
+            <div className="grid grid-cols-1 gap-2.5">
+              {/* Signatory 1 (Left) */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                    <PenTool className="w-3 h-3 text-slate-500" />
+                    <span>{currentLanguage === 'ar' ? '4. المشرف الأكاديمي (اليسار)' : '4. Academic Director (Left)'}</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => onSelectElement('cert-signatory-1')}
+                    className="text-[10px] text-[#00A3E0] hover:underline cursor-pointer"
+                  >
+                    {currentLanguage === 'ar' ? 'تنسيق' : 'Format'}
+                  </button>
+                </div>
                 <input
                   type="text"
                   dir="auto"
-                  value={elements.find((el) => el.id === 'optional')?.text || employeeData.optionalText || ''}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    onUpdateEmployeeData({ optionalText: val });
-                    onUpdateElement('optional', { text: val, isVisible: true });
-                  }}
-                  placeholder={t.optionalTextPlaceholder}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#00A3E0]/30 focus:border-[#00A3E0] transition-all text-slate-900"
+                  value={elements.find((el) => el.id === 'cert-signatory-1')?.text ?? ''}
+                  onChange={(e) => onUpdateElement('cert-signatory-1', { text: e.target.value })}
+                  placeholder={currentLanguage === 'ar' ? 'د. فهد العتيبي — رئيس الأكاديمية' : 'Dr. Fahad Al-Otaibi — Training Director'}
+                  className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-900"
                 />
-
-                {/* Quick Presets */}
-                <div className="flex flex-wrap items-center gap-1 pt-0.5">
-                  {[
-                    { label: currentLanguage === 'ar' ? 'المركز' : 'Center', text: currentLanguage === 'ar' ? 'مركز رؤية لجراحة القلب والأوعية' : 'Heart & Vascular Center' },
-                    { label: currentLanguage === 'ar' ? 'الرقم' : 'ID', text: 'ID: VM-884920' },
-                    { label: currentLanguage === 'ar' ? 'اعتماد' : 'Accredited', text: currentLanguage === 'ar' ? 'معتمد من سباهي و JCI' : 'CBAHI & JCI Accredited' },
-                    { label: currentLanguage === 'ar' ? 'شعار' : 'Slogan', text: currentLanguage === 'ar' ? 'التميز في الرعاية الصحية' : 'Excellence in Healthcare' },
-                  ].map((preset) => (
-                    <button
-                      key={preset.label}
-                      type="button"
-                      onClick={() => {
-                        onUpdateEmployeeData({ optionalText: preset.text });
-                        onUpdateElement('optional', { text: preset.text, isVisible: true });
-                        onSelectElement('optional');
-                      }}
-                      className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-white border border-slate-200 hover:border-[#00A3E0] hover:text-[#005A9C] text-slate-600 transition-colors cursor-pointer"
-                    >
-                      + {preset.label}
-                    </button>
-                  ))}
-                </div>
               </div>
-            )}
-          </div>
-        </section>
+
+              {/* Signatory 2 (Right) */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                    <PenTool className="w-3 h-3 text-slate-500" />
+                    <span>{currentLanguage === 'ar' ? '5. المدير الطبي التنفيذي (اليمين)' : '5. Chief Medical Officer (Right)'}</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => onSelectElement('cert-signatory-2')}
+                    className="text-[10px] text-[#00A3E0] hover:underline cursor-pointer"
+                  >
+                    {currentLanguage === 'ar' ? 'تنسيق' : 'Format'}
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  dir="auto"
+                  value={elements.find((el) => el.id === 'cert-signatory-2')?.text ?? ''}
+                  onChange={(e) => onUpdateElement('cert-signatory-2', { text: e.target.value })}
+                  placeholder={currentLanguage === 'ar' ? 'أ.د. خالد الشهري — المدير الطبي التنفيذي' : 'Prof. Khalid Al-Shehri — Chief Medical Officer'}
+                  className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-900"
+                />
+              </div>
+            </div>
+
+            {/* 6. Optional Text Box (Certificate ID / Distinction) */}
+            <div className="p-3 bg-slate-50/90 rounded-xl border border-slate-200/80 space-y-2 mt-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-[#00A3E0]" />
+                  <span>{currentLanguage === 'ar' ? 'حقل اختياري (رقم الشهادة / ملاحظات)' : 'Optional Text Box (Cert ID / Notes)'}</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => onToggleOptionalText(!isOptionalTextActive)}
+                  className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
+                    isOptionalTextActive ? 'bg-[#00A3E0]' : 'bg-slate-300'
+                  }`}
+                  title="Toggle optional text box"
+                >
+                  <div
+                    className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform absolute top-0.5 ${
+                      isOptionalTextActive ? 'end-0.5' : 'start-0.5'
+                    }`}
+                  />
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-snug">
+                {currentLanguage === 'ar'
+                  ? 'تفعيل حقل إضافي لرقم ترخيص الشهادة، أو التقدير، أو اسم المركز المعتمد.'
+                  : 'Enable an optional extra text box for certificate license ID, honors, or training center.'}
+              </p>
+
+              {isOptionalTextActive && (
+                <div className="space-y-2 pt-1 animate-in fade-in duration-150">
+                  <input
+                    type="text"
+                    dir="auto"
+                    value={elements.find((el) => el.id === 'optional')?.text || employeeData.optionalText || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      onUpdateEmployeeData({ optionalText: val });
+                      onUpdateElement('optional', { text: val, isVisible: true });
+                    }}
+                    placeholder={currentLanguage === 'ar' ? 'رقم الشهادة: VM-ACAD-2026-9082' : 'Certificate ID: VM-ACAD-2026-9082'}
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#00A3E0]/30 focus:border-[#00A3E0] transition-all text-slate-900"
+                  />
+
+                  {/* Certificate Quick Presets */}
+                  <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                    {[
+                      {
+                        label: currentLanguage === 'ar' ? 'رقم الشهادة' : 'Cert ID',
+                        text: 'Certificate ID: VM-ACAD-2026-9082 · Riyadh, KSA',
+                      },
+                      {
+                        label: currentLanguage === 'ar' ? 'مع مرتبة الشرف' : 'Honors',
+                        text: currentLanguage === 'ar' ? 'بتقدير ممتاز مع مرتبة الشرف الأولى' : 'Passed with Highest Distinction',
+                      },
+                      {
+                        label: currentLanguage === 'ar' ? 'اعتماد سباهي' : 'CBAHI',
+                        text: currentLanguage === 'ar' ? 'برنامج معتمد من المركز السعودي للاعتماد' : 'CBAHI Accredited Program',
+                      },
+                      {
+                        label: currentLanguage === 'ar' ? 'مركز التدريب' : 'Academy',
+                        text: currentLanguage === 'ar' ? 'أكاديمية التدريب الطبي التخصصي · الرياض' : 'Vision Medical Training Center · Riyadh',
+                      },
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => {
+                          onUpdateEmployeeData({ optionalText: preset.text });
+                          onUpdateElement('optional', { text: preset.text, isVisible: true });
+                          onSelectElement('optional');
+                        }}
+                        className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-white border border-slate-200 hover:border-[#00A3E0] hover:text-[#005A9C] text-slate-600 transition-colors cursor-pointer"
+                      >
+                        + {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        ) : (
+          /* ================= Regular Templates (Name, Role, Department + Optional) ================= */
+          <section className="space-y-3.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-800 tracking-wide uppercase flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-slate-500" />
+                <span>{t.employeeNameLabel}</span>
+              </label>
+              <span className="text-[10px] text-slate-400 font-medium">
+                {currentLanguage === 'ar' ? 'عربي / English' : 'Arabic / English'}
+              </span>
+            </div>
+
+            <input
+              type="text"
+              dir="auto"
+              value={employeeData.fullName}
+              onChange={(e) => {
+                const val = e.target.value;
+                onUpdateEmployeeData({ fullName: val });
+                onUpdateElement('name', { text: val });
+              }}
+              placeholder={t.employeeNamePlaceholder}
+              className="w-full px-3.5 py-2.5 text-sm font-medium rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#00A3E0]/30 focus:border-[#00A3E0] transition-all text-slate-900"
+            />
+
+            {/* Job Title / Role */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <Briefcase className="w-3.5 h-3.5 text-slate-500" />
+                <span>{t.employeeRoleLabel}</span>
+              </label>
+              <input
+                type="text"
+                dir="auto"
+                value={employeeData.roleTitle}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  onUpdateEmployeeData({ roleTitle: val });
+                  onUpdateElement('role', { text: val });
+                }}
+                placeholder={t.employeeRolePlaceholder}
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#00A3E0]/30 focus:border-[#00A3E0] transition-all text-slate-900"
+              />
+            </div>
+
+            {/* Department / Hospital */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <Building className="w-3.5 h-3.5 text-slate-500" />
+                <span>{t.departmentLabel}</span>
+              </label>
+              <input
+                type="text"
+                dir="auto"
+                value={employeeData.department}
+                onChange={(e) => onUpdateEmployeeData({ department: e.target.value })}
+                placeholder={t.departmentPlaceholder}
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#00A3E0]/30 focus:border-[#00A3E0] transition-all text-slate-900"
+              />
+            </div>
+
+            {/* Optional Text Box Setup */}
+            <div className="p-3 bg-slate-50/90 rounded-xl border border-slate-200/80 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-[#00A3E0]" />
+                  <span>{t.optionalTextBox}</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => onToggleOptionalText(!isOptionalTextActive)}
+                  className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
+                    isOptionalTextActive ? 'bg-[#00A3E0]' : 'bg-slate-300'
+                  }`}
+                  title="Toggle optional text box"
+                >
+                  <div
+                    className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform absolute top-0.5 ${
+                      isOptionalTextActive ? 'end-0.5' : 'start-0.5'
+                    }`}
+                  />
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-snug">{t.optionalTextDesc}</p>
+
+              {isOptionalTextActive && (
+                <div className="space-y-2 pt-1 animate-in fade-in duration-150">
+                  <input
+                    type="text"
+                    dir="auto"
+                    value={elements.find((el) => el.id === 'optional')?.text || employeeData.optionalText || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      onUpdateEmployeeData({ optionalText: val });
+                      onUpdateElement('optional', { text: val, isVisible: true });
+                    }}
+                    placeholder={t.optionalTextPlaceholder}
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#00A3E0]/30 focus:border-[#00A3E0] transition-all text-slate-900"
+                  />
+
+                  {/* Quick Presets */}
+                  <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                    {[
+                      { label: currentLanguage === 'ar' ? 'المركز' : 'Center', text: currentLanguage === 'ar' ? 'مركز رؤية لجراحة القلب والأوعية' : 'Heart & Vascular Center' },
+                      { label: currentLanguage === 'ar' ? 'الرقم' : 'ID', text: 'ID: VM-884920' },
+                      { label: currentLanguage === 'ar' ? 'اعتماد' : 'Accredited', text: currentLanguage === 'ar' ? 'معتمد من سباهي و JCI' : 'CBAHI & JCI Accredited' },
+                      { label: currentLanguage === 'ar' ? 'شعار' : 'Slogan', text: currentLanguage === 'ar' ? 'التميز في الرعاية الصحية' : 'Excellence in Healthcare' },
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => {
+                          onUpdateEmployeeData({ optionalText: preset.text });
+                          onUpdateElement('optional', { text: preset.text, isVisible: true });
+                          onSelectElement('optional');
+                        }}
+                        className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-white border border-slate-200 hover:border-[#00A3E0] hover:text-[#005A9C] text-slate-600 transition-colors cursor-pointer"
+                      >
+                        + {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         <hr className="border-slate-100" />
 
         {/* Step 3: Typography & Style Controls */}
         <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-slate-800 tracking-wide uppercase">
-              {currentLanguage === 'ar' ? 'تنسيق النص المحدد' : 'Format Selected Element'}
-            </label>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-800 tracking-wide uppercase">
+                {currentLanguage === 'ar' ? 'تنسيق الحقل المحدد' : 'Format Selected Element'}
+              </label>
+              <span className="text-[10px] font-mono text-[#00A3E0] bg-[#E0F2FE] px-2 py-0.5 rounded-md font-semibold">
+                {activeElement?.id}
+              </span>
+            </div>
 
-            {/* Switch target element (Name vs Role vs Optional) */}
-            <div className="flex items-center p-0.5 bg-slate-100 rounded-lg border border-slate-200">
-              <button
-                onClick={() => onSelectElement('name')}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
-                  activeElement?.id === 'name'
-                    ? 'bg-white text-[#0B2545] shadow-xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {currentLanguage === 'ar' ? 'الاسم' : 'Name'}
-              </button>
-              <button
-                onClick={() => onSelectElement('role')}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
-                  activeElement?.id === 'role'
-                    ? 'bg-white text-[#0B2545] shadow-xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {currentLanguage === 'ar' ? 'المسمى' : 'Role'}
-              </button>
-              <button
-                onClick={() => {
-                  if (!isOptionalTextActive) {
-                    onToggleOptionalText(true);
-                  }
-                  onSelectElement('optional');
-                }}
-                className={`px-2 py-1 text-xs font-semibold rounded-md transition-colors ${
-                  activeElement?.id === 'optional'
-                    ? 'bg-white text-[#00A3E0] shadow-xs font-bold'
-                    : isOptionalTextActive
-                    ? 'text-slate-700 hover:text-slate-900'
-                    : 'text-slate-400 hover:text-slate-600'
-                }`}
-                title="Format optional text box"
-              >
-                {t.optionalTabLabel}
-              </button>
+            {/* Dynamic element selector pills */}
+            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
+              {elements.map((el) => {
+                const isSelected = activeElement?.id === el.id;
+                const rawLabel =
+                  (currentLanguage === 'ar' ? el.labelAr : el.labelEn) ||
+                  (el.id === 'name' || el.id === 'cert-name'
+                    ? currentLanguage === 'ar' ? 'الاسم' : 'Name'
+                    : el.id === 'role' || el.id === 'cert-program'
+                    ? currentLanguage === 'ar' ? 'المسمى' : 'Role'
+                    : currentLanguage === 'ar' ? 'نص إضافي' : 'Optional');
+
+                const shortLabel = rawLabel.split(/[(:—]/)[0].trim();
+
+                return (
+                  <button
+                    key={el.id}
+                    type="button"
+                    onClick={() => {
+                      if (el.id === 'optional' && !isOptionalTextActive) {
+                        onToggleOptionalText(true);
+                      }
+                      onSelectElement(el.id);
+                    }}
+                    className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-white text-[#0B2545] shadow-xs font-bold ring-1 ring-slate-200'
+                        : el.id === 'optional' && !isOptionalTextActive
+                        ? 'text-slate-400 hover:text-slate-600'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {shortLabel}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

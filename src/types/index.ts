@@ -1,6 +1,7 @@
 export type Language = 'en' | 'ar';
 
 export type TemplateCategory =
+  | 'certificates'
   | 'celebrations'
   | 'internal-announcements'
   | 'letterheads'
@@ -42,6 +43,7 @@ export interface Template {
   tags: string[];
   isActive: boolean;
   isPopular?: boolean;
+  defaultElements?: CanvasTextElement[];
 }
 
 export interface EmployeeData {

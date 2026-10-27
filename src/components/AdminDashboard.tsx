@@ -637,6 +637,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     }
                     className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 text-slate-900"
                   >
+                    <option value="certificates">Training & Certificates</option>
                     <option value="celebrations">Celebrations & Holidays</option>
                     <option value="internal-announcements">Internal Announcements</option>
                     <option value="letterheads">Letterhead, Header & Footer</option>

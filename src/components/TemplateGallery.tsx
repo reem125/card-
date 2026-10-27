@@ -15,6 +15,7 @@ import {
   ArrowRight,
   Layers,
   FileText,
+  Award,
 } from 'lucide-react';
 
 interface TemplateGalleryProps {
@@ -61,6 +62,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
 
   const categoryList: (TemplateCategory | 'all')[] = [
     'all',
+    'certificates',
     'celebrations',
     'internal-announcements',
     'letterheads',
@@ -68,6 +70,8 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
 
   const getCategoryIcon = (cat: TemplateCategory | 'all') => {
     switch (cat) {
+      case 'certificates':
+        return <Award className="w-3.5 h-3.5" />;
       case 'celebrations':
         return <Sparkles className="w-3.5 h-3.5" />;
       case 'internal-announcements':

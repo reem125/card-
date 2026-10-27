@@ -1,13 +1,16 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { CanvasTextElement, Language, SafeZone, Template } from '../types';
+import { CanvasTextElement, Language, Template } from '../types';
 import { UI_TRANSLATIONS } from '../data/brandAssets';
 import {
   ZoomIn,
   ZoomOut,
   Maximize2,
   Crosshair,
-  ShieldAlert,
   Move,
+  Layers,
+  Palette,
+  Sun,
+  Grid,
 } from 'lucide-react';
 
 interface TemplateCanvasProps {
@@ -35,47 +38,78 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
 
-  const [zoomScale, setZoomScale] = useState<number>(1);
+  // User zoom multiplier: 1.0 means exactly fit to container
+  const [zoomFactor, setZoomFactor] = useState<number>(1.0);
+  const [canvasTheme, setCanvasTheme] = useState<'light' | 'white' | 'grid'>('light');
+  const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({
+    width: 800,
+    height: 580,
+  });
+
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [initialElemPos, setInitialElemPos] = useState<{ xPercent: number; yPercent: number }>({ xPercent: 0, yPercent: 0 });
+  const [initialElemPos, setInitialElemPos] = useState<{ xPercent: number; yPercent: number }>({
+    xPercent: 0,
+    yPercent: 0,
+  });
   const [initialFontSize, setInitialFontSize] = useState<number>(24);
   const [snapGuides, setSnapGuides] = useState<{ x: boolean; y: boolean }>({ x: false, y: false });
 
-  // Auto-fit canvas to container on mount or template switch
-  const fitToContainer = useCallback(() => {
+  // Measure container dimensions responsively
+  const updateContainerSize = useCallback(() => {
     if (!containerRef.current) return;
-    const padding = 48; // px
-    const containerWidth = containerRef.current.clientWidth - padding;
-    const containerHeight = containerRef.current.clientHeight - padding;
-
-    if (containerWidth <= 0 || containerHeight <= 0) return;
-
-    const scaleX = containerWidth / template.width;
-    const scaleY = containerHeight / template.height;
-    const fitScale = Math.min(scaleX, scaleY, 1);
-    setZoomScale(fitScale > 0.1 ? fitScale : 0.8);
-  }, [template.width, template.height]);
+    const rect = containerRef.current.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      setContainerSize({ width: rect.width, height: rect.height });
+    }
+  }, []);
 
   useEffect(() => {
-    fitToContainer();
-    const handleResize = () => fitToContainer();
+    updateContainerSize();
+    const handleResize = () => updateContainerSize();
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [fitToContainer]);
 
-  // Coordinates helper: converts mouse/touch client point to percentage in canvas space
-  const getCanvasCoordinates = (clientX: number, clientY: number) => {
-    if (!canvasWrapperRef.current) return { xPercent: 50, yPercent: 50 };
-    const rect = canvasWrapperRef.current.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
+    let observer: ResizeObserver | null = null;
+    if (containerRef.current && window.ResizeObserver) {
+      observer = new ResizeObserver(() => updateContainerSize());
+      observer.observe(containerRef.current);
+    }
 
-    const xPercent = Math.max(0, Math.min(100, (x / rect.width) * 100));
-    const yPercent = Math.max(0, Math.min(100, (y / rect.height) * 100));
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (observer) observer.disconnect();
+    };
+  }, [updateContainerSize]);
 
-    return { xPercent, yPercent };
+  // Reset zoom to 100% fit on template switch
+  useEffect(() => {
+    setZoomFactor(1.0);
+    updateContainerSize();
+  }, [template.id, template.width, template.height, updateContainerSize]);
+
+  // Compute adaptive fit scale: canvas adapts automatically to horizontal/landscape or vertical aspect ratios
+  const paddingX = 32;
+  const paddingY = 32;
+  const availWidth = Math.max(120, containerSize.width - paddingX);
+  const availHeight = Math.max(120, containerSize.height - paddingY);
+
+  const scaleX = availWidth / template.width;
+  const scaleY = availHeight / template.height;
+  // Natural fit scale ensures the entire design is 100% visible inside the container
+  const baseFitScale = Math.min(scaleX, scaleY);
+  const effectiveScale = Math.max(0.05, baseFitScale * zoomFactor);
+
+  // Exact rendered layout dimensions matching the template aspect ratio without excessive scroll space
+  const renderedWidth = Math.max(100, Math.round(template.width * effectiveScale));
+  const renderedHeight = Math.max(100, Math.round(template.height * effectiveScale));
+
+  const isLandscape = template.width > template.height;
+  const aspectRatioValue = (template.width / template.height).toFixed(2);
+
+  // Fit to screen action
+  const handleFitToScreen = () => {
+    setZoomFactor(1.0);
   };
 
   // Start dragging text box
@@ -146,20 +180,25 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
 
         setSnapGuides({ x: snappedX, y: snappedY });
 
-        // Enforce boundary constraints (safe zone bounds or canvas padding)
-        const minX = template.safeZone ? template.safeZone.minXPercent : 5;
-        const maxX = template.safeZone ? template.safeZone.maxXPercent : 95;
-        const minY = template.safeZone ? template.safeZone.minYPercent : 8;
-        const maxY = template.safeZone ? template.safeZone.maxYPercent : 92;
+        // Safe zone boundaries
+        const minX = template.safeZone ? template.safeZone.minXPercent : 4;
+        const maxX = template.safeZone ? template.safeZone.maxXPercent : 96;
+        const minY = template.safeZone ? template.safeZone.minYPercent : 5;
+        const maxY = template.safeZone ? template.safeZone.maxYPercent : 95;
 
         newXPercent = Math.max(minX, Math.min(maxX, newXPercent));
         newYPercent = Math.max(minY, Math.min(maxY, newYPercent));
 
-        onUpdateElementPosition(selectedElementId, Math.round(newXPercent * 10) / 10, Math.round(newYPercent * 10) / 10);
+        onUpdateElementPosition(
+          selectedElementId,
+          Math.round(newXPercent * 10) / 10,
+          Math.round(newYPercent * 10) / 10
+        );
       } else if (isResizing) {
         const deltaX = clientX - dragStartPos.x;
-        const scaleFactor = 1 + (deltaX / 150);
-        const calculatedSize = Math.max(12, Math.min(96, Math.round(initialFontSize * scaleFactor)));
+        // Normalize font resizing against the effective scale
+        const scaleFactor = 1 + deltaX / (140 * effectiveScale);
+        const calculatedSize = Math.max(10, Math.min(120, Math.round(initialFontSize * scaleFactor)));
         onUpdateElementFontSize(selectedElementId, calculatedSize);
       }
     };
@@ -183,7 +222,18 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
       window.removeEventListener('touchmove', handlePointerMove);
       window.removeEventListener('touchend', handlePointerUp);
     };
-  }, [isDragging, isResizing, selectedElementId, dragStartPos, initialElemPos, initialFontSize, template.safeZone, onUpdateElementPosition, onUpdateElementFontSize]);
+  }, [
+    isDragging,
+    isResizing,
+    selectedElementId,
+    dragStartPos,
+    initialElemPos,
+    initialFontSize,
+    effectiveScale,
+    template.safeZone,
+    onUpdateElementPosition,
+    onUpdateElementFontSize,
+  ]);
 
   // Center selected element on canvas
   const handleSnapToCenter = () => {
@@ -192,86 +242,136 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-900/95 rounded-2xl border border-slate-800 overflow-hidden shadow-xl select-none">
+    <div className="flex flex-col h-full bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs select-none">
       {/* Top Canvas Toolbar */}
-      <div className="px-4 py-2.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between text-xs text-slate-300">
-        <div className="flex items-center gap-3">
-          <span className="font-semibold text-white tracking-wide">
+      <div className="px-4 py-2.5 bg-[#0B2545] border-b border-slate-800 flex items-center justify-between text-xs text-slate-100 flex-wrap gap-2">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span className="font-bold text-white tracking-wide">
             {currentLanguage === 'ar' ? template.titleAr : template.titleEn}
           </span>
-          <span className="text-slate-600">|</span>
-          <span className="font-mono text-slate-400">
+          <span className="text-slate-500">|</span>
+          <span className="bg-white/10 text-sky-200 font-medium px-2 py-0.5 rounded text-[11px] flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#00A3E0]" />
+            {isLandscape
+              ? currentLanguage === 'ar'
+                ? 'عرضي أفقي'
+                : 'Landscape'
+              : currentLanguage === 'ar'
+              ? 'طولي عمودي'
+              : 'Portrait'}
+            <span className="text-slate-400 font-mono">({aspectRatioValue}:1)</span>
+          </span>
+          <span className="text-slate-500 hidden sm:inline">|</span>
+          <span className="font-mono text-slate-300 text-[11px] hidden sm:inline">
             {template.width} × {template.height} px
           </span>
         </div>
 
-        {/* Zoom & Canvas Actions */}
+        {/* Zoom, Background Theme & Canvas Actions */}
         <div className="flex items-center gap-1.5">
+          {/* Workspace Background Mode Toggle (Light Studio, Pure White, Blueprint Grid) */}
+          <div className="flex items-center bg-slate-800/80 rounded-lg p-0.5 border border-slate-700/60 me-1">
+            <button
+              onClick={() => setCanvasTheme('light')}
+              className={`p-1 rounded cursor-pointer transition-colors ${
+                canvasTheme === 'light' ? 'bg-[#00A3E0] text-white' : 'text-slate-300 hover:text-white'
+              }`}
+              title={currentLanguage === 'ar' ? 'خلفية استوديو ناعمة' : 'Soft Studio Canvas'}
+            >
+              <Palette className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setCanvasTheme('white')}
+              className={`p-1 rounded cursor-pointer transition-colors ${
+                canvasTheme === 'white' ? 'bg-[#00A3E0] text-white' : 'text-slate-300 hover:text-white'
+              }`}
+              title={currentLanguage === 'ar' ? 'أبيض ناصع' : 'Pure White Background'}
+            >
+              <Sun className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setCanvasTheme('grid')}
+              className={`p-1 rounded cursor-pointer transition-colors ${
+                canvasTheme === 'grid' ? 'bg-[#00A3E0] text-white' : 'text-slate-300 hover:text-white'
+              }`}
+              title={currentLanguage === 'ar' ? 'شبكة هندسية' : 'Blueprint Grid'}
+            >
+              <Grid className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
           <button
-            onClick={() => setZoomScale((prev) => Math.max(0.2, prev - 0.1))}
-            className="p-1.5 rounded-md hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+            onClick={() => setZoomFactor((prev) => Math.max(0.4, Math.round((prev - 0.15) * 100) / 100))}
+            className="p-1.5 rounded-md hover:bg-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer"
             title={t.zoomOut}
           >
             <ZoomOut className="w-4 h-4" />
           </button>
-          <span className="font-mono text-[11px] px-1 text-slate-400 min-w-[42px] text-center">
-            {Math.round(zoomScale * 100)}%
+          <span className="font-mono text-[11px] px-1 text-sky-200 min-w-[42px] text-center font-semibold">
+            {Math.round(zoomFactor * 100)}%
           </span>
           <button
-            onClick={() => setZoomScale((prev) => Math.min(2.5, prev + 0.1))}
-            className="p-1.5 rounded-md hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+            onClick={() => setZoomFactor((prev) => Math.min(2.5, Math.round((prev + 0.15) * 100) / 100))}
+            className="p-1.5 rounded-md hover:bg-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer"
             title={t.zoomIn}
           >
             <ZoomIn className="w-4 h-4" />
           </button>
           <button
-            onClick={fitToContainer}
-            className="p-1.5 rounded-md hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+            onClick={handleFitToScreen}
+            className="px-2 py-1 rounded-md hover:bg-slate-800 text-slate-200 hover:text-white transition-colors cursor-pointer flex items-center gap-1 font-medium text-[11px]"
             title={t.fitScreen}
           >
-            <Maximize2 className="w-4 h-4" />
+            <Maximize2 className="w-3.5 h-3.5 text-[#00A3E0]" />
+            <span>{t.fitScreen}</span>
           </button>
           {selectedElementId && (
             <button
               onClick={handleSnapToCenter}
-              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-md transition-colors flex items-center gap-1 cursor-pointer font-medium"
+              className="px-2.5 py-1 bg-[#00A3E0] hover:bg-[#0091C8] text-white rounded-md transition-colors flex items-center gap-1 cursor-pointer font-bold shadow-2xs"
               title={t.snapToCenter}
             >
-              <Crosshair className="w-3.5 h-3.5 text-[#00A3E0]" />
+              <Crosshair className="w-3.5 h-3.5" />
               <span>{t.snapToCenter}</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Main Interactive Canvas Viewport */}
+      {/* Main Interactive Canvas Viewport (Dynamic Aspect Ratio, Zero Dark Borders) */}
       <div
         ref={containerRef}
         onClick={() => onSelectElement(null)}
-        className="relative flex-1 overflow-auto flex items-center justify-center p-6 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px]"
+        className={`relative flex-1 overflow-auto flex items-center justify-center p-3 sm:p-5 transition-colors duration-200 ${
+          canvasTheme === 'white'
+            ? 'bg-[#ffffff]'
+            : canvasTheme === 'grid'
+            ? 'bg-slate-50 [background-image:linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] [background-size:24px_24px]'
+            : 'bg-slate-100/90 [background-image:radial-gradient(#cbd5e1_1.2px,transparent_1.2px)] [background-size:16px_16px]'
+        }`}
       >
         <div
           ref={canvasWrapperRef}
           onClick={(e) => e.stopPropagation()}
-          className="relative shadow-2xl transition-transform duration-75 origin-center rounded-lg overflow-hidden border border-slate-700/50"
+          className="relative shadow-xl shadow-slate-400/25 transition-all duration-75 origin-center rounded-xl overflow-hidden border border-slate-200/90 bg-white"
           style={{
-            width: `${template.width}px`,
-            height: `${template.height}px`,
-            transform: `scale(${zoomScale})`,
-            transformOrigin: 'center center',
+            width: `${renderedWidth}px`,
+            height: `${renderedHeight}px`,
+            aspectRatio: `${template.width} / ${template.height}`,
+            flexShrink: 0,
           }}
         >
-          {/* Background Layer: Scaled SVG or Raster Image */}
+          {/* Background Layer: Template Graphic / Certificate / Banner */}
           {template.imageUrl ? (
             <img
               src={template.imageUrl}
               alt="Template Background"
-              className="w-full h-full object-cover pointer-events-none"
+              className="w-full h-full object-contain pointer-events-none select-none block"
               referrerPolicy="no-referrer"
             />
           ) : template.svgBackground ? (
             <div
-              className="w-full h-full pointer-events-none"
+              className="w-full h-full pointer-events-none select-none"
               dangerouslySetInnerHTML={{ __html: template.svgBackground }}
             />
           ) : (
@@ -295,7 +395,7 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
           {/* Optional Safe Zone Boundaries Overlay */}
           {showSafeZoneGuides && template.safeZone && (
             <div
-              className="absolute pointer-events-none border border-dashed border-[#00A3E0]/30 z-20"
+              className="absolute pointer-events-none border border-dashed border-[#00A3E0]/40 z-20"
               style={{
                 left: `${template.safeZone.minXPercent}%`,
                 top: `${template.safeZone.minYPercent}%`,
@@ -303,29 +403,33 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
                 height: `${template.safeZone.maxYPercent - template.safeZone.minYPercent}%`,
               }}
             >
-              <span className="absolute -top-4 start-1 text-[9px] font-mono text-[#00A3E0]/70 uppercase tracking-widest">
-                Safe Text Zone
+              <span className="absolute -top-3.5 start-1 text-[8px] font-mono font-bold text-[#005A9C] bg-white/90 px-1 rounded shadow-2xs uppercase tracking-wider">
+                {currentLanguage === 'ar' ? 'منطقة آمنة للنص' : 'Safe Text Zone'}
               </span>
             </div>
           )}
 
-          {/* Interactive Text Elements (Draggable & Resizable) */}
+          {/* Interactive Text Elements (Draggable & Resizable, Proportional Rendering) */}
           {elements
             .filter((el) => el.isVisible !== false)
             .map((el) => {
               const isSelected = selectedElementId === el.id;
               const elementLabel =
-                el.id === 'name'
+                (currentLanguage === 'ar' ? el.labelAr : el.labelEn) ||
+                (el.id === 'name' || el.id === 'cert-name'
                   ? currentLanguage === 'ar'
                     ? 'الاسم'
                     : 'Name'
-                  : el.id === 'role'
+                  : el.id === 'role' || el.id === 'cert-program'
                   ? currentLanguage === 'ar'
                     ? 'المسمى'
-                    : 'Role'
+                    : 'Program / Role'
                   : currentLanguage === 'ar'
                   ? 'نص إضافي'
-                  : 'Optional Text';
+                  : 'Optional Text');
+
+              const renderedFontSize = Math.max(8, Math.round(el.fontSize * effectiveScale));
+              const renderedLetterSpacing = (el.letterSpacing || 0) * effectiveScale;
 
               return (
                 <div
@@ -334,15 +438,15 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
                   onTouchStart={(e) => handleDragStart(e, el.id)}
                   className={`absolute cursor-move select-none z-20 group transition-shadow ${
                     isSelected
-                      ? 'ring-2 ring-[#00A3E0] ring-offset-1 ring-offset-transparent shadow-lg'
+                      ? 'ring-2 ring-[#00A3E0] ring-offset-1 ring-offset-white shadow-md'
                       : 'hover:ring-1 hover:ring-[#00A3E0]/50'
                   }`}
                   style={{
                     left: `${el.xPercent}%`,
                     top: `${el.yPercent}%`,
                     transform: 'translate(-50%, -50%)',
-                    padding: '4px 8px',
-                    borderRadius: '6px',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
                   }}
                 >
                   {/* Text Node */}
@@ -350,25 +454,26 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
                     dir="auto"
                     style={{
                       fontFamily: `"${el.fontFamily}", Cairo, "Plus Jakarta Sans", sans-serif`,
-                      fontSize: `${el.fontSize}px`,
+                      fontSize: `${renderedFontSize}px`,
                       fontWeight: el.fontWeight,
                       color: el.color,
                       textAlign: el.alignment,
-                      letterSpacing: `${el.letterSpacing}px`,
+                      letterSpacing: `${renderedLetterSpacing}px`,
                       lineHeight: el.lineHeight,
                       whiteSpace: 'nowrap',
-                      textShadow: el.hasShadow ? '0 2px 8px rgba(0,0,0,0.5)' : 'none',
+                      textShadow: el.hasShadow ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
                     }}
                   >
                     {el.text ||
-                      (el.id === 'name'
+                      (currentLanguage === 'ar' ? el.labelAr : el.labelEn) ||
+                      (el.id === 'name' || el.id === 'cert-name'
                         ? currentLanguage === 'ar'
                           ? 'الاسم هنا'
                           : 'Your Name Here'
-                        : el.id === 'role'
+                        : el.id === 'role' || el.id === 'cert-program'
                         ? currentLanguage === 'ar'
-                          ? 'المسمى الوظيفي'
-                          : 'Job Title'
+                          ? 'المسمى / البرنامج'
+                          : 'Program Title'
                         : currentLanguage === 'ar'
                         ? 'نص إضافي اختياري'
                         : 'Optional Text')}
@@ -378,8 +483,8 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
                   {isSelected && (
                     <>
                       {/* Top drag pill indicator */}
-                      <div className="absolute -top-6 start-1/2 -translate-x-1/2 bg-[#00A3E0] text-white px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-md pointer-events-none whitespace-nowrap">
-                        <Move className="w-2.5 h-2.5" />
+                      <div className="absolute -top-5 start-1/2 -translate-x-1/2 bg-[#0B2545] text-white px-1.5 py-0.5 rounded-full text-[9px] font-bold flex items-center gap-1 shadow-md pointer-events-none whitespace-nowrap border border-sky-400">
+                        <Move className="w-2.5 h-2.5 text-[#00A3E0]" />
                         <span>{elementLabel}</span>
                       </div>
 
@@ -388,29 +493,32 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
                         onMouseDown={(e) => handleResizeStart(e, el.id)}
                         onTouchStart={(e) => handleResizeStart(e, el.id)}
                         className="absolute -bottom-1.5 -end-1.5 w-3.5 h-3.5 bg-white border-2 border-[#00A3E0] rounded-full shadow-md cursor-nwse-resize hover:scale-125 transition-transform"
-                        title="Drag to resize text font"
+                        title={currentLanguage === 'ar' ? 'اسحب لتغيير حجم الخط' : 'Drag to resize font size'}
                       />
 
-                    {/* Corner Dots */}
-                    <div className="absolute -top-1 -start-1 w-2 h-2 bg-[#00A3E0] rounded-full" />
-                    <div className="absolute -top-1 -end-1 w-2 h-2 bg-[#00A3E0] rounded-full" />
-                    <div className="absolute -bottom-1 -start-1 w-2 h-2 bg-[#00A3E0] rounded-full" />
-                  </>
-                )}
-              </div>
-            );
-          })}
+                      {/* Corner Dots */}
+                      <div className="absolute -top-1 -start-1 w-2 h-2 bg-[#00A3E0] rounded-full" />
+                      <div className="absolute -top-1 -end-1 w-2 h-2 bg-[#00A3E0] rounded-full" />
+                      <div className="absolute -bottom-1 -start-1 w-2 h-2 bg-[#00A3E0] rounded-full" />
+                    </>
+                  )}
+                </div>
+              );
+            })}
         </div>
       </div>
 
-      {/* Bottom Hint Banner */}
-      <div className="px-4 py-2 bg-slate-950/80 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
+      {/* Bottom Hint & Coordinates Status Bar */}
+      <div className="px-4 py-2 bg-slate-50 border-t border-slate-200 text-[11px] text-slate-600 flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Move className="w-3.5 h-3.5 text-[#00A3E0]" />
           <span>{t.dragHint}</span>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="font-mono text-slate-500">
+        <div className="flex items-center gap-3 font-medium">
+          <span className="text-slate-500">
+            {currentLanguage === 'ar' ? 'الموقع:' : 'Position:'}
+          </span>
+          <span className="font-mono text-[#005A9C] bg-white px-2 py-0.5 rounded border border-slate-200 text-[11px]">
             X: {elements.find((e) => e.id === selectedElementId)?.xPercent ?? 50}% | Y:{' '}
             {elements.find((e) => e.id === selectedElementId)?.yPercent ?? 50}%
           </span>

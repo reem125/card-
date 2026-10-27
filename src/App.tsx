@@ -32,6 +32,8 @@ import {
   Plus,
   Check,
   FileText,
+  Columns,
+  Maximize,
 } from 'lucide-react';
 
 export default function App() {
@@ -54,7 +56,8 @@ export default function App() {
       localStorage.removeItem('vm_templates');
       localStorage.removeItem('vm_templates_v2');
       localStorage.removeItem('vm_templates_v3');
-      const saved = localStorage.getItem('vm_templates_v4');
+      localStorage.removeItem('vm_templates_v4');
+      const saved = localStorage.getItem('vm_templates_v5');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (
@@ -66,6 +69,7 @@ export default function App() {
               (t.id.startsWith('vm-ramadan') ||
                 t.id.startsWith('vm-eid') ||
                 t.id.startsWith('vm-welcome') ||
+                t.id.startsWith('vm-cert') ||
                 t.id.startsWith('vm-official'))
           )
         ) {
@@ -185,6 +189,7 @@ export default function App() {
   const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [showSafeZoneGuides, setShowSafeZoneGuides] = useState<boolean>(true);
+  const [isWideCanvas, setIsWideCanvas] = useState<boolean>(false);
 
   // Sync RTL / LTR document direction and language attribute
   useEffect(() => {
@@ -194,7 +199,7 @@ export default function App() {
 
   // Persist templates to localStorage
   useEffect(() => {
-    localStorage.setItem('vm_templates_v4', JSON.stringify(templates));
+    localStorage.setItem('vm_templates_v5', JSON.stringify(templates));
   }, [templates]);
 
   // Persist employee details
@@ -215,7 +220,7 @@ export default function App() {
     if (newState) {
       setSelectedElementId('optional');
     } else if (selectedElementId === 'optional') {
-      setSelectedElementId('name');
+      setSelectedElementId(elements[0]?.id || 'name');
     }
   };
 
@@ -224,57 +229,80 @@ export default function App() {
     setSelectedTemplate(template);
     const existingOptional = elements.find((el) => el.id === 'optional');
 
-    // Initialize elements matching template presets, preserving optional text box
-    setElements([
-      {
-        id: 'name',
-        text: employeeData.fullName || 'Dr. Ahmed Al-Otaibi',
-        fontFamily: currentLanguage === 'ar' ? 'Cairo' : 'Plus Jakarta Sans',
-        fontSize: template.defaultFontSize,
-        fontWeight: '700',
-        color: template.defaultColor,
-        alignment: template.defaultAlignment,
-        xPercent: template.defaultNameX,
-        yPercent: template.defaultNameY,
-        letterSpacing: currentLanguage === 'ar' ? 0 : 0.5,
-        lineHeight: 1.2,
-        hasShadow: template.theme === 'dark',
-        isVisible: true,
-      },
-      {
-        id: 'role',
-        text: employeeData.roleTitle || 'Senior Consultant Cardiologist',
-        fontFamily: currentLanguage === 'ar' ? 'Tajawal' : 'Outfit',
-        fontSize: template.defaultRoleFontSize || Math.round(template.defaultFontSize * 0.6),
-        fontWeight: '500',
-        color: template.defaultRoleColor || (template.theme === 'dark' ? '#38BDF8' : '#005A9C'),
-        alignment: template.defaultAlignment,
-        xPercent: template.defaultRoleX || template.defaultNameX,
-        yPercent: template.defaultRoleY || template.defaultNameY + 11,
-        letterSpacing: 0,
-        lineHeight: 1.2,
-        hasShadow: false,
-        isVisible: true,
-      },
-      {
-        id: 'optional',
-        text:
-          existingOptional?.text ||
-          employeeData.optionalText ||
-          (currentLanguage === 'ar' ? 'مركز رؤية لجراحة القلب' : 'Heart & Vascular Center'),
-        fontFamily: currentLanguage === 'ar' ? 'Cairo' : 'Plus Jakarta Sans',
-        fontSize: Math.max(14, Math.round(template.defaultFontSize * 0.45)),
-        fontWeight: '500',
-        color: template.theme === 'dark' ? '#E0F2FE' : '#005A9C',
-        alignment: template.defaultAlignment,
-        xPercent: template.defaultRoleX || template.defaultNameX,
-        yPercent: Math.min(90, (template.defaultRoleY || template.defaultNameY + 11) + 11),
-        letterSpacing: 0,
-        lineHeight: 1.2,
-        hasShadow: false,
-        isVisible: isOptionalTextActive,
-      },
-    ]);
+    if (template.defaultElements && template.defaultElements.length > 0) {
+      setElements(
+        template.defaultElements.map((el) => {
+          if (el.id === 'optional') {
+            return {
+              ...el,
+              text: existingOptional?.text || el.text,
+              isVisible: isOptionalTextActive,
+            };
+          }
+          if (el.id === 'cert-name' && employeeData.fullName) {
+            return {
+              ...el,
+              text: employeeData.fullName,
+            };
+          }
+          return { ...el };
+        })
+      );
+      setSelectedElementId(template.defaultElements[0].id);
+    } else {
+      // Standard template elements
+      setElements([
+        {
+          id: 'name',
+          text: employeeData.fullName || 'Dr. Ahmed Al-Otaibi',
+          fontFamily: currentLanguage === 'ar' ? 'Cairo' : 'Plus Jakarta Sans',
+          fontSize: template.defaultFontSize,
+          fontWeight: '700',
+          color: template.defaultColor,
+          alignment: template.defaultAlignment,
+          xPercent: template.defaultNameX,
+          yPercent: template.defaultNameY,
+          letterSpacing: currentLanguage === 'ar' ? 0 : 0.5,
+          lineHeight: 1.2,
+          hasShadow: template.theme === 'dark',
+          isVisible: true,
+        },
+        {
+          id: 'role',
+          text: employeeData.roleTitle || 'Senior Consultant Cardiologist',
+          fontFamily: currentLanguage === 'ar' ? 'Tajawal' : 'Outfit',
+          fontSize: template.defaultRoleFontSize || Math.round(template.defaultFontSize * 0.6),
+          fontWeight: '500',
+          color: template.defaultRoleColor || (template.theme === 'dark' ? '#38BDF8' : '#005A9C'),
+          alignment: template.defaultAlignment,
+          xPercent: template.defaultRoleX || template.defaultNameX,
+          yPercent: template.defaultRoleY || template.defaultNameY + 11,
+          letterSpacing: 0,
+          lineHeight: 1.2,
+          hasShadow: false,
+          isVisible: true,
+        },
+        {
+          id: 'optional',
+          text:
+            existingOptional?.text ||
+            employeeData.optionalText ||
+            (currentLanguage === 'ar' ? 'مركز رؤية لجراحة القلب' : 'Heart & Vascular Center'),
+          fontFamily: currentLanguage === 'ar' ? 'Cairo' : 'Plus Jakarta Sans',
+          fontSize: Math.max(14, Math.round(template.defaultFontSize * 0.45)),
+          fontWeight: '500',
+          color: template.theme === 'dark' ? '#E0F2FE' : '#005A9C',
+          alignment: template.defaultAlignment,
+          xPercent: template.defaultRoleX || template.defaultNameX,
+          yPercent: Math.min(90, (template.defaultRoleY || template.defaultNameY + 11) + 11),
+          letterSpacing: 0,
+          lineHeight: 1.2,
+          hasShadow: false,
+          isVisible: isOptionalTextActive,
+        },
+      ]);
+      setSelectedElementId('name');
+    }
     setActiveView('editor');
     setCurrentStep(2);
   };
@@ -298,6 +326,28 @@ export default function App() {
 
   // Reset positions to default template coordinates
   const handleResetPositions = () => {
+    if (selectedTemplate.defaultElements && selectedTemplate.defaultElements.length > 0) {
+      setElements((prev) =>
+        prev.map((el) => {
+          const def = selectedTemplate.defaultElements?.find((d) => d.id === el.id);
+          if (def) {
+            return {
+              ...el,
+              xPercent: def.xPercent,
+              yPercent: def.yPercent,
+              fontSize: def.fontSize,
+              alignment: def.alignment,
+              color: def.color,
+              fontWeight: def.fontWeight,
+              fontFamily: def.fontFamily,
+            };
+          }
+          return el;
+        })
+      );
+      return;
+    }
+
     setElements((prev) =>
       prev.map((el) => {
         if (el.id === 'name') {
@@ -563,6 +613,41 @@ export default function App() {
               </div>
 
               <div className="flex items-center gap-2">
+                {/* Wide Canvas Toggle for large horizontal certificates & banners */}
+                <button
+                  onClick={() => setIsWideCanvas(!isWideCanvas)}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer flex items-center gap-1.5 ${
+                    isWideCanvas
+                      ? 'bg-[#E0F2FE] text-[#005A9C] border-[#00A3E0]/40 font-bold'
+                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                  }`}
+                  title={
+                    isWideCanvas
+                      ? currentLanguage === 'ar'
+                        ? 'العودة للعرض المنقسم'
+                        : 'Switch to Split View'
+                      : currentLanguage === 'ar'
+                      ? 'توسيع مساحة التصميم'
+                      : 'Expand Canvas View'
+                  }
+                >
+                  {isWideCanvas ? (
+                    <>
+                      <Columns className="w-3.5 h-3.5 text-[#00A3E0]" />
+                      <span className="hidden sm:inline">
+                        {currentLanguage === 'ar' ? 'عرض منقسم' : 'Split View'}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Maximize className="w-3.5 h-3.5 text-[#00A3E0]" />
+                      <span className="hidden sm:inline">
+                        {currentLanguage === 'ar' ? 'توسيع المساحة' : 'Wide View'}
+                      </span>
+                    </>
+                  )}
+                </button>
+
                 {/* Safe zone guide toggle */}
                 <button
                   onClick={() => setShowSafeZoneGuides(!showSafeZoneGuides)}
@@ -597,9 +682,13 @@ export default function App() {
             </div>
 
             {/* Canvas + Sidebar Side-by-Side Grid */}
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[620px]">
-              {/* Left/Center: Interactive Canvas (Desktop 8 cols) */}
-              <div className="lg:col-span-8 h-full min-h-[500px]">
+            <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[640px]">
+              {/* Left/Center: Interactive Canvas */}
+              <div
+                className={`${
+                  isWideCanvas ? 'lg:col-span-12' : 'lg:col-span-8'
+                } h-[580px] sm:h-[640px] lg:h-[700px] flex flex-col`}
+              >
                 <TemplateCanvas
                   template={selectedTemplate}
                   elements={elements}
@@ -612,8 +701,8 @@ export default function App() {
                 />
               </div>
 
-              {/* Right: Customization Panel (Desktop 4 cols) */}
-              <div className="lg:col-span-4 h-full">
+              {/* Right: Customization Panel */}
+              <div className={`${isWideCanvas ? 'lg:col-span-12' : 'lg:col-span-4'} h-full`}>
                 <CustomizerSidebar
                   template={selectedTemplate}
                   employeeData={employeeData}
