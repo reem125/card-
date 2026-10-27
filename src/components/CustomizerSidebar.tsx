@@ -49,6 +49,8 @@ interface CustomizerSidebarProps {
   currentLanguage: Language;
   onToggleOptionalText: (enabled: boolean) => void;
   isOptionalTextActive: boolean;
+  onToggleOptionalText2: (enabled: boolean) => void;
+  isOptionalText2Active: boolean;
 }
 
 export const CustomizerSidebar: React.FC<CustomizerSidebarProps> = ({
@@ -65,6 +67,8 @@ export const CustomizerSidebar: React.FC<CustomizerSidebarProps> = ({
   currentLanguage,
   onToggleOptionalText,
   isOptionalTextActive,
+  onToggleOptionalText2,
+  isOptionalText2Active,
 }) => {
   const t = UI_TRANSLATIONS[currentLanguage];
   const isRtl = currentLanguage === 'ar';
@@ -255,27 +259,38 @@ export const CustomizerSidebar: React.FC<CustomizerSidebarProps> = ({
               </div>
             </div>
 
-            {/* 6. Optional Text Box (Certificate ID / Distinction) */}
+            {/* 6. Optional Text Box 1 (Certificate ID / Distinction) */}
             <div className="p-3 bg-slate-50/90 rounded-xl border border-slate-200/80 space-y-2 mt-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-[#00A3E0]" />
-                  <span>{currentLanguage === 'ar' ? 'حقل اختياري (رقم الشهادة / ملاحظات)' : 'Optional Text Box (Cert ID / Notes)'}</span>
+                  <span>{currentLanguage === 'ar' ? 'حقل اختياري ١ (رقم الشهادة / ملاحظات)' : 'Optional Text Box 1 (Cert ID / Notes)'}</span>
                 </label>
-                <button
-                  type="button"
-                  onClick={() => onToggleOptionalText(!isOptionalTextActive)}
-                  className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
-                    isOptionalTextActive ? 'bg-[#00A3E0]' : 'bg-slate-300'
-                  }`}
-                  title="Toggle optional text box"
-                >
-                  <div
-                    className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform absolute top-0.5 ${
-                      isOptionalTextActive ? 'end-0.5' : 'start-0.5'
+                <div className="flex items-center gap-2">
+                  {isOptionalTextActive && (
+                    <button
+                      type="button"
+                      onClick={() => onSelectElement('optional')}
+                      className="text-[10px] text-[#00A3E0] hover:underline cursor-pointer"
+                    >
+                      {currentLanguage === 'ar' ? 'تنسيق' : 'Format'}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => onToggleOptionalText(!isOptionalTextActive)}
+                    className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
+                      isOptionalTextActive ? 'bg-[#00A3E0]' : 'bg-slate-300'
                     }`}
-                  />
-                </button>
+                    title="Toggle optional text box 1"
+                  >
+                    <div
+                      className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform absolute top-0.5 ${
+                        isOptionalTextActive ? 'end-0.5' : 'start-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
               <p className="text-[11px] text-slate-500 leading-snug">
                 {currentLanguage === 'ar'
@@ -325,6 +340,98 @@ export const CustomizerSidebar: React.FC<CustomizerSidebarProps> = ({
                           onUpdateEmployeeData({ optionalText: preset.text });
                           onUpdateElement('optional', { text: preset.text, isVisible: true });
                           onSelectElement('optional');
+                        }}
+                        className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-white border border-slate-200 hover:border-[#00A3E0] hover:text-[#005A9C] text-slate-600 transition-colors cursor-pointer"
+                      >
+                        + {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 7. Optional Text Box 2 (Accreditation Code / Date / Seal) */}
+            <div className="p-3 bg-slate-50/90 rounded-xl border border-slate-200/80 space-y-2 mt-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-[#00A3E0]" />
+                  <span>{currentLanguage === 'ar' ? 'حقل اختياري ٢ (كود التحقق / التاريخ / الختم)' : 'Optional Text Box 2 (Verification / Date / Seal)'}</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  {isOptionalText2Active && (
+                    <button
+                      type="button"
+                      onClick={() => onSelectElement('optional-2')}
+                      className="text-[10px] text-[#00A3E0] hover:underline cursor-pointer"
+                    >
+                      {currentLanguage === 'ar' ? 'تنسيق' : 'Format'}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => onToggleOptionalText2(!isOptionalText2Active)}
+                    className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
+                      isOptionalText2Active ? 'bg-[#00A3E0]' : 'bg-slate-300'
+                    }`}
+                    title="Toggle optional text box 2"
+                  >
+                    <div
+                      className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform absolute top-0.5 ${
+                        isOptionalText2Active ? 'end-0.5' : 'start-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-snug">
+                {currentLanguage === 'ar'
+                  ? 'تفعيل حقل ثانٍ لكود التحقق، أو تاريخ الإصدار، أو الملاحظات الأكاديمية.'
+                  : 'Enable a second optional text box for verification code, issue date, or academic remarks.'}
+              </p>
+
+              {isOptionalText2Active && (
+                <div className="space-y-2 pt-1 animate-in fade-in duration-150">
+                  <input
+                    type="text"
+                    dir="auto"
+                    value={elements.find((el) => el.id === 'optional-2')?.text || employeeData.optionalText2 || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      onUpdateEmployeeData({ optionalText2: val });
+                      onUpdateElement('optional-2', { text: val, isVisible: true });
+                    }}
+                    placeholder={currentLanguage === 'ar' ? 'كود التحقق: CME-VM-8849 · معتمد' : 'Accreditation Code: CME-VM-8849 · Verified'}
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#00A3E0]/30 focus:border-[#00A3E0] transition-all text-slate-900"
+                  />
+
+                  {/* Certificate Quick Presets for Box 2 */}
+                  <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                    {[
+                      {
+                        label: currentLanguage === 'ar' ? 'كود الاعتماد' : 'Code',
+                        text: 'CME-ACC-VM-2026-X88',
+                      },
+                      {
+                        label: currentLanguage === 'ar' ? 'تاريخ التخرج' : 'Issued',
+                        text: currentLanguage === 'ar' ? 'صدرت بتاريخ: ٢٧ أكتوبر ٢٠٢٦م' : 'Issued: 27 October 2026',
+                      },
+                      {
+                        label: currentLanguage === 'ar' ? 'الختم الإلكتروني' : 'E-Seal',
+                        text: currentLanguage === 'ar' ? 'شهادة موثقة إلكترونياً برقم ترخيص ٩٢١٠' : 'Digitally Certified & Sealed #9210',
+                      },
+                      {
+                        label: currentLanguage === 'ar' ? 'التحقق' : 'Verify',
+                        text: 'verify.visionmedicalksa.com/certs',
+                      },
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => {
+                          onUpdateEmployeeData({ optionalText2: preset.text });
+                          onUpdateElement('optional-2', { text: preset.text, isVisible: true });
+                          onSelectElement('optional-2');
                         }}
                         className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-white border border-slate-200 hover:border-[#00A3E0] hover:text-[#005A9C] text-slate-600 transition-colors cursor-pointer"
                       >
@@ -398,27 +505,38 @@ export const CustomizerSidebar: React.FC<CustomizerSidebarProps> = ({
               />
             </div>
 
-            {/* Optional Text Box Setup */}
+            {/* Optional Text Box 1 Setup */}
             <div className="p-3 bg-slate-50/90 rounded-xl border border-slate-200/80 space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-[#00A3E0]" />
-                  <span>{t.optionalTextBox}</span>
+                  <span>{t.optionalTextBox1 || (currentLanguage === 'ar' ? 'مربع نص اختياري ١' : 'Optional Text Box 1')}</span>
                 </label>
-                <button
-                  type="button"
-                  onClick={() => onToggleOptionalText(!isOptionalTextActive)}
-                  className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
-                    isOptionalTextActive ? 'bg-[#00A3E0]' : 'bg-slate-300'
-                  }`}
-                  title="Toggle optional text box"
-                >
-                  <div
-                    className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform absolute top-0.5 ${
-                      isOptionalTextActive ? 'end-0.5' : 'start-0.5'
+                <div className="flex items-center gap-2">
+                  {isOptionalTextActive && (
+                    <button
+                      type="button"
+                      onClick={() => onSelectElement('optional')}
+                      className="text-[10px] text-[#00A3E0] hover:underline cursor-pointer"
+                    >
+                      {currentLanguage === 'ar' ? 'تنسيق' : 'Format'}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => onToggleOptionalText(!isOptionalTextActive)}
+                    className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
+                      isOptionalTextActive ? 'bg-[#00A3E0]' : 'bg-slate-300'
                     }`}
-                  />
-                </button>
+                    title="Toggle optional text box 1"
+                  >
+                    <div
+                      className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform absolute top-0.5 ${
+                        isOptionalTextActive ? 'end-0.5' : 'start-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
               <p className="text-[11px] text-slate-500 leading-snug">{t.optionalTextDesc}</p>
 
@@ -437,7 +555,7 @@ export const CustomizerSidebar: React.FC<CustomizerSidebarProps> = ({
                     className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#00A3E0]/30 focus:border-[#00A3E0] transition-all text-slate-900"
                   />
 
-                  {/* Quick Presets */}
+                  {/* Quick Presets for Box 1 */}
                   <div className="flex flex-wrap items-center gap-1 pt-0.5">
                     {[
                       { label: currentLanguage === 'ar' ? 'المركز' : 'Center', text: currentLanguage === 'ar' ? 'مركز رؤية لجراحة القلب والأوعية' : 'Heart & Vascular Center' },
@@ -452,6 +570,84 @@ export const CustomizerSidebar: React.FC<CustomizerSidebarProps> = ({
                           onUpdateEmployeeData({ optionalText: preset.text });
                           onUpdateElement('optional', { text: preset.text, isVisible: true });
                           onSelectElement('optional');
+                        }}
+                        className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-white border border-slate-200 hover:border-[#00A3E0] hover:text-[#005A9C] text-slate-600 transition-colors cursor-pointer"
+                      >
+                        + {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Optional Text Box 2 Setup */}
+            <div className="p-3 bg-slate-50/90 rounded-xl border border-slate-200/80 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-[#00A3E0]" />
+                  <span>{t.optionalTextBox2 || (currentLanguage === 'ar' ? 'مربع نص اختياري ٢' : 'Optional Text Box 2')}</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  {isOptionalText2Active && (
+                    <button
+                      type="button"
+                      onClick={() => onSelectElement('optional-2')}
+                      className="text-[10px] text-[#00A3E0] hover:underline cursor-pointer"
+                    >
+                      {currentLanguage === 'ar' ? 'تنسيق' : 'Format'}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => onToggleOptionalText2(!isOptionalText2Active)}
+                    className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
+                      isOptionalText2Active ? 'bg-[#00A3E0]' : 'bg-slate-300'
+                    }`}
+                    title="Toggle optional text box 2"
+                  >
+                    <div
+                      className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform absolute top-0.5 ${
+                        isOptionalText2Active ? 'end-0.5' : 'start-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-snug">
+                {t.optionalText2Desc || (currentLanguage === 'ar' ? 'أضف حقلاً إضافياً ثانياً للمدينة، الفرع، الهاتف، أو الملاحظات.' : 'Add a second text line for branch, phone/ext, date, or notice.')}
+              </p>
+
+              {isOptionalText2Active && (
+                <div className="space-y-2 pt-1 animate-in fade-in duration-150">
+                  <input
+                    type="text"
+                    dir="auto"
+                    value={elements.find((el) => el.id === 'optional-2')?.text || employeeData.optionalText2 || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      onUpdateEmployeeData({ optionalText2: val });
+                      onUpdateElement('optional-2', { text: val, isVisible: true });
+                    }}
+                    placeholder={t.optionalText2Placeholder || (currentLanguage === 'ar' ? 'مثال: الفرع الرئيسي بالرياض أو هاتف: ٩٢٠٠٠٩٣٦٥' : 'e.g. Riyadh Main Center or Ext: 4402')}
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#00A3E0]/30 focus:border-[#00A3E0] transition-all text-slate-900"
+                  />
+
+                  {/* Quick Presets for Box 2 */}
+                  <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                    {[
+                      { label: currentLanguage === 'ar' ? 'الموحد' : 'Toll-Free', text: currentLanguage === 'ar' ? 'الرقم الموحد: ٩٢٠٠ ٠٩٣٦٥' : 'Toll-Free: 9200 09365' },
+                      { label: currentLanguage === 'ar' ? 'المدينة' : 'City', text: currentLanguage === 'ar' ? 'الرياض · المملكة العربية السعودية' : 'Riyadh, Saudi Arabia' },
+                      { label: currentLanguage === 'ar' ? 'الموقع' : 'Web', text: 'www.visionmedicalksa.com' },
+                      { label: currentLanguage === 'ar' ? 'الفرع' : 'Branch', text: currentLanguage === 'ar' ? 'فرع العليا التخصصي' : 'Olaya Specialized Branch' },
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => {
+                          onUpdateEmployeeData({ optionalText2: preset.text });
+                          onUpdateElement('optional-2', { text: preset.text, isVisible: true });
+                          onSelectElement('optional-2');
                         }}
                         className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-white border border-slate-200 hover:border-[#00A3E0] hover:text-[#005A9C] text-slate-600 transition-colors cursor-pointer"
                       >
@@ -489,9 +685,12 @@ export const CustomizerSidebar: React.FC<CustomizerSidebarProps> = ({
                     ? currentLanguage === 'ar' ? 'الاسم' : 'Name'
                     : el.id === 'role' || el.id === 'cert-program'
                     ? currentLanguage === 'ar' ? 'المسمى' : 'Role'
-                    : currentLanguage === 'ar' ? 'نص إضافي' : 'Optional');
+                    : el.id === 'optional-2'
+                    ? currentLanguage === 'ar' ? 'نص إضافي ٢' : 'Optional 2'
+                    : currentLanguage === 'ar' ? 'نص إضافي ١' : 'Optional 1');
 
                 const shortLabel = rawLabel.split(/[(:—]/)[0].trim();
+                const isInactiveOptional = (el.id === 'optional' && !isOptionalTextActive) || (el.id === 'optional-2' && !isOptionalText2Active);
 
                 return (
                   <button
@@ -501,12 +700,15 @@ export const CustomizerSidebar: React.FC<CustomizerSidebarProps> = ({
                       if (el.id === 'optional' && !isOptionalTextActive) {
                         onToggleOptionalText(true);
                       }
+                      if (el.id === 'optional-2' && !isOptionalText2Active) {
+                        onToggleOptionalText2(true);
+                      }
                       onSelectElement(el.id);
                     }}
                     className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                       isSelected
                         ? 'bg-white text-[#0B2545] shadow-xs font-bold ring-1 ring-slate-200'
-                        : el.id === 'optional' && !isOptionalTextActive
+                        : isInactiveOptional
                         ? 'text-slate-400 hover:text-slate-600'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}

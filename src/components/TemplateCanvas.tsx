@@ -424,9 +424,13 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
                   ? currentLanguage === 'ar'
                     ? 'المسمى'
                     : 'Program / Role'
+                  : el.id === 'optional-2'
+                  ? currentLanguage === 'ar'
+                    ? 'نص إضافي ٢'
+                    : 'Optional Text 2'
                   : currentLanguage === 'ar'
-                  ? 'نص إضافي'
-                  : 'Optional Text');
+                  ? 'نص إضافي ١'
+                  : 'Optional Text 1');
 
               const renderedFontSize = Math.max(8, Math.round(el.fontSize * effectiveScale));
               const renderedLetterSpacing = (el.letterSpacing || 0) * effectiveScale;

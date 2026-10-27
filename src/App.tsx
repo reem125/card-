@@ -167,10 +167,26 @@ export default function App() {
       hasShadow: false,
       isVisible: false,
     },
+    {
+      id: 'optional-2',
+      text: 'الرقم الموحد: ٩٢٠٠ ٠٩٣٦٥',
+      fontFamily: 'Cairo',
+      fontSize: 16,
+      fontWeight: '500',
+      color: '#F58220',
+      alignment: initialTpl?.defaultAlignment || 'center',
+      xPercent: initialTpl?.defaultNameX || 50,
+      yPercent: 93,
+      letterSpacing: 0,
+      lineHeight: 1.2,
+      hasShadow: false,
+      isVisible: false,
+    },
   ]);
 
   const [selectedElementId, setSelectedElementId] = useState<string | null>('name');
   const [isOptionalTextActive, setIsOptionalTextActive] = useState<boolean>(false);
+  const [isOptionalText2Active, setIsOptionalText2Active] = useState<boolean>(false);
 
   // Admin Governance Settings
   const [adminSettings, setAdminSettings] = useState<AdminSettings>(() => {
@@ -265,7 +281,7 @@ export default function App() {
     localStorage.setItem('vm_admin_settings', JSON.stringify(adminSettings));
   }, [adminSettings]);
 
-  // Toggle optional text box
+  // Toggle optional text box 1
   const handleToggleOptionalText = (enabled?: boolean) => {
     const newState = enabled !== undefined ? enabled : !isOptionalTextActive;
     setIsOptionalTextActive(newState);
@@ -277,10 +293,23 @@ export default function App() {
     }
   };
 
+  // Toggle optional text box 2
+  const handleToggleOptionalText2 = (enabled?: boolean) => {
+    const newState = enabled !== undefined ? enabled : !isOptionalText2Active;
+    setIsOptionalText2Active(newState);
+    handleUpdateElement('optional-2', { isVisible: newState });
+    if (newState) {
+      setSelectedElementId('optional-2');
+    } else if (selectedElementId === 'optional-2') {
+      setSelectedElementId(elements[0]?.id || 'name');
+    }
+  };
+
   // Handle template selection from gallery
   const handleSelectTemplate = (template: Template) => {
     setSelectedTemplate(template);
     const existingOptional = elements.find((el) => el.id === 'optional');
+    const existingOptional2 = elements.find((el) => el.id === 'optional-2');
 
     if (template.defaultElements && template.defaultElements.length > 0) {
       setElements(
@@ -290,6 +319,13 @@ export default function App() {
               ...el,
               text: existingOptional?.text || el.text,
               isVisible: isOptionalTextActive,
+            };
+          }
+          if (el.id === 'optional-2') {
+            return {
+              ...el,
+              text: existingOptional2?.text || el.text,
+              isVisible: isOptionalText2Active,
             };
           }
           if (el.id === 'cert-name' && employeeData.fullName) {
@@ -304,6 +340,10 @@ export default function App() {
       setSelectedElementId(template.defaultElements[0].id);
     } else {
       // Standard template elements
+      const roleY = template.defaultRoleY || (template.defaultNameY + 8);
+      const opt1Y = Math.min(88, roleY + 7);
+      const opt2Y = Math.min(94, opt1Y + 6);
+
       setElements([
         {
           id: 'name',
@@ -329,7 +369,7 @@ export default function App() {
           color: template.defaultRoleColor || (template.theme === 'dark' ? '#38BDF8' : '#005A9C'),
           alignment: template.defaultAlignment,
           xPercent: template.defaultRoleX || template.defaultNameX,
-          yPercent: template.defaultRoleY || template.defaultNameY + 11,
+          yPercent: roleY,
           letterSpacing: 0,
           lineHeight: 1.2,
           hasShadow: false,
@@ -340,18 +380,36 @@ export default function App() {
           text:
             existingOptional?.text ||
             employeeData.optionalText ||
-            (currentLanguage === 'ar' ? 'مركز رؤية لجراحة القلب' : 'Heart & Vascular Center'),
+            (currentLanguage === 'ar' ? 'مركز رؤية لجراحة القلب والأوعية' : 'Heart & Vascular Center'),
           fontFamily: currentLanguage === 'ar' ? 'Cairo' : 'Plus Jakarta Sans',
           fontSize: Math.max(14, Math.round(template.defaultFontSize * 0.45)),
           fontWeight: '500',
           color: template.theme === 'dark' ? '#E0F2FE' : '#005A9C',
           alignment: template.defaultAlignment,
           xPercent: template.defaultRoleX || template.defaultNameX,
-          yPercent: Math.min(90, (template.defaultRoleY || template.defaultNameY + 11) + 11),
+          yPercent: opt1Y,
           letterSpacing: 0,
           lineHeight: 1.2,
           hasShadow: false,
           isVisible: isOptionalTextActive,
+        },
+        {
+          id: 'optional-2',
+          text:
+            existingOptional2?.text ||
+            employeeData.optionalText2 ||
+            (currentLanguage === 'ar' ? 'الرقم الموحد: ٩٢٠٠ ٠٩٣٦٥' : 'Toll-Free: 9200 09365'),
+          fontFamily: currentLanguage === 'ar' ? 'Cairo' : 'Plus Jakarta Sans',
+          fontSize: Math.max(12, Math.round(template.defaultFontSize * 0.38)),
+          fontWeight: '500',
+          color: template.theme === 'dark' ? '#7DD3FC' : '#F58220',
+          alignment: template.defaultAlignment,
+          xPercent: template.defaultRoleX || template.defaultNameX,
+          yPercent: opt2Y,
+          letterSpacing: 0,
+          lineHeight: 1.2,
+          hasShadow: false,
+          isVisible: isOptionalText2Active,
         },
       ]);
       setSelectedElementId('name');
@@ -427,10 +485,20 @@ export default function App() {
           return {
             ...el,
             xPercent: selectedTemplate.defaultRoleX || selectedTemplate.defaultNameX,
-            yPercent: Math.min(90, (selectedTemplate.defaultRoleY || selectedTemplate.defaultNameY + 11) + 11),
+            yPercent: Math.min(88, (selectedTemplate.defaultRoleY || selectedTemplate.defaultNameY + 8) + 7),
             fontSize: Math.max(14, Math.round(selectedTemplate.defaultFontSize * 0.45)),
             alignment: selectedTemplate.defaultAlignment,
             color: selectedTemplate.theme === 'dark' ? '#E0F2FE' : '#005A9C',
+          };
+        }
+        if (el.id === 'optional-2') {
+          return {
+            ...el,
+            xPercent: selectedTemplate.defaultRoleX || selectedTemplate.defaultNameX,
+            yPercent: Math.min(94, (selectedTemplate.defaultRoleY || selectedTemplate.defaultNameY + 8) + 13),
+            fontSize: Math.max(12, Math.round(selectedTemplate.defaultFontSize * 0.38)),
+            alignment: selectedTemplate.defaultAlignment,
+            color: selectedTemplate.theme === 'dark' ? '#7DD3FC' : '#F58220',
           };
         }
         return el;
@@ -692,25 +760,48 @@ export default function App() {
 
                 <div className="h-4 w-px bg-slate-200 hidden sm:block" />
 
-                {/* Optional Text Box Button in Change Template part */}
+                {/* Optional Text Box 1 Button in Change Template part */}
                 <button
                   onClick={() => handleToggleOptionalText()}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer transition-all border ${
+                  className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer transition-all border ${
                     isOptionalTextActive
                       ? 'bg-[#E0F2FE] hover:bg-[#BAE6FD] text-[#005A9C] border-[#00A3E0]/40 font-bold shadow-2xs'
                       : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
                   }`}
-                  title={isOptionalTextActive ? 'Optional text box is active on canvas' : 'Add an optional text box to this template'}
+                  title={isOptionalTextActive ? 'Optional text box 1 is active' : 'Add optional text box 1'}
                 >
                   {isOptionalTextActive ? (
                     <>
                       <Check className="w-3.5 h-3.5 text-[#00A3E0]" />
-                      <span>{t.optionalTextActive}</span>
+                      <span>{currentLanguage === 'ar' ? 'نص اختياري ١ مفعّل' : 'Optional 1 Active'}</span>
                     </>
                   ) : (
                     <>
                       <Plus className="w-3.5 h-3.5 text-[#00A3E0]" />
-                      <span>{t.addOptionalText}</span>
+                      <span>{currentLanguage === 'ar' ? '+ نص اختياري ١' : '+ Optional 1'}</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Optional Text Box 2 Button in Change Template part */}
+                <button
+                  onClick={() => handleToggleOptionalText2()}
+                  className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer transition-all border ${
+                    isOptionalText2Active
+                      ? 'bg-[#E0F2FE] hover:bg-[#BAE6FD] text-[#005A9C] border-[#00A3E0]/40 font-bold shadow-2xs'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                  }`}
+                  title={isOptionalText2Active ? 'Optional text box 2 is active' : 'Add optional text box 2'}
+                >
+                  {isOptionalText2Active ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-[#00A3E0]" />
+                      <span>{currentLanguage === 'ar' ? 'نص اختياري ٢ مفعّل' : 'Optional 2 Active'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5 text-[#00A3E0]" />
+                      <span>{currentLanguage === 'ar' ? '+ نص اختياري ٢' : '+ Optional 2'}</span>
                     </>
                   )}
                 </button>
@@ -826,6 +917,8 @@ export default function App() {
                   currentLanguage={currentLanguage}
                   onToggleOptionalText={handleToggleOptionalText}
                   isOptionalTextActive={isOptionalTextActive}
+                  onToggleOptionalText2={handleToggleOptionalText2}
+                  isOptionalText2Active={isOptionalText2Active}
                 />
               </div>
             </div>
