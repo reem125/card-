@@ -14,8 +14,9 @@ import {
   seedInitialTemplates,
   getAdminSettings,
   saveAdminSettings,
-  isSupabaseConfigured,
-} from './server/supabase';
+  isDatabaseConfigured,
+  getImage,
+} from './server/storage';
 
 dotenv.config();
 
@@ -75,7 +76,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    supabaseConfigured: isSupabaseConfigured(),
+    databaseConfigured: isDatabaseConfigured(),
   });
 });
 
@@ -85,6 +86,22 @@ app.get('/api/admin/sync-status', async (req, res) => {
     res.json({ success: true, status });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Uploaded template images stored in the database (when Cloudinary is not set up)
+app.get('/api/images/:id', async (req, res) => {
+  try {
+    const image = await getImage(req.params.id);
+    if (!image) {
+      return res.status(404).end();
+    }
+    res.setHeader('Content-Type', image.mimeType);
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.send(image.bytes);
+  } catch (error: any) {
+    console.error('Error serving image:', error);
+    res.status(500).end();
   }
 });
 
@@ -110,7 +127,7 @@ app.get('/api/templates', async (req, res) => {
 // ==========================================
 // 3. ADMIN TEMPLATE MANAGEMENT API
 // ==========================================
-// POST /api/upload - Uploads template image to Supabase Storage or persistent file server
+// POST /api/upload - Uploads template image to Cloudinary or the database
 app.post('/api/upload', async (req, res) => {
   try {
     const { base64Data, fileName, mimeType = 'image/png' } = req.body;
