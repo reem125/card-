@@ -74,7 +74,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Cloud Diagnostics State
   const [cloudStatus, setCloudStatus] = useState<CloudSyncStatus | null>(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState<boolean>(false);
-  const [copiedSql, setCopiedSql] = useState<boolean>(false);
 
   // Brand color management
   const [newColorHex, setNewColorHex] = useState<string>('#0284C7');
@@ -295,50 +294,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  // Copy Supabase SQL Schema
-  const handleCopySql = () => {
-    const sql = `-- Run in Supabase SQL Editor:
-CREATE TABLE IF NOT EXISTS public.templates (
-    id TEXT PRIMARY KEY,
-    title_en TEXT NOT NULL,
-    title_ar TEXT NOT NULL,
-    category TEXT NOT NULL,
-    width INTEGER NOT NULL DEFAULT 1080,
-    height INTEGER NOT NULL DEFAULT 1080,
-    description_en TEXT NOT NULL DEFAULT '',
-    description_ar TEXT NOT NULL DEFAULT '',
-    theme TEXT NOT NULL DEFAULT 'light',
-    image_url TEXT,
-    svg_background TEXT,
-    default_name_x NUMERIC NOT NULL DEFAULT 50,
-    default_name_y NUMERIC NOT NULL DEFAULT 50,
-    default_role_x NUMERIC,
-    default_role_y NUMERIC,
-    default_font_size INTEGER NOT NULL DEFAULT 36,
-    default_role_font_size INTEGER,
-    default_color TEXT NOT NULL DEFAULT '#0B2545',
-    default_role_color TEXT,
-    default_alignment TEXT NOT NULL DEFAULT 'center',
-    safe_zone JSONB NOT NULL DEFAULT '{"minXPercent": 5, "maxXPercent": 95, "minYPercent": 8, "maxYPercent": 92}'::jsonb,
-    tags TEXT[] NOT NULL DEFAULT '{}',
-    is_active BOOLEAN NOT NULL DEFAULT true,
-    is_popular BOOLEAN NOT NULL DEFAULT false,
-    default_elements JSONB,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
-);
-ALTER TABLE public.templates ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public can view active templates" ON public.templates FOR SELECT USING (is_active = true OR auth.role() = 'authenticated' OR auth.role() = 'service_role');
-CREATE POLICY "Service role full access on templates" ON public.templates FOR ALL USING (true) WITH CHECK (true);
-INSERT INTO storage.buckets (id, name, public) VALUES ('templates', 'templates', true) ON CONFLICT (id) DO NOTHING;
-CREATE POLICY "Public Access to Templates Bucket" ON storage.objects FOR SELECT USING (bucket_id = 'templates');
-CREATE POLICY "Service Role Upload to Templates Bucket" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'templates');`;
-
-    navigator.clipboard.writeText(sql);
-    setCopiedSql(true);
-    setTimeout(() => setCopiedSql(false), 3000);
-  };
-
   // Filtered templates
   const filteredTemplates = templates.filter((t) => {
     if (categoryFilter !== 'all' && t.category !== categoryFilter) return false;
@@ -376,7 +331,7 @@ CREATE POLICY "Service Role Upload to Templates Bucket" ON storage.objects FOR I
               {cloudStatus?.connected ? (
                 <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 rounded-md flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Supabase Cloud Active
+                  Cloud Storage Active
                 </span>
               ) : (
                 <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30 rounded-md flex items-center gap-1">
@@ -439,7 +394,7 @@ CREATE POLICY "Service Role Upload to Templates Bucket" ON storage.objects FOR I
         >
           <Database className="w-4 h-4" />
           <span>
-            {currentLanguage === 'ar' ? 'قاعدة بيانات Supabase والسحابة' : 'Supabase Cloud Database'}
+            {currentLanguage === 'ar' ? 'قاعدة البيانات السحابية' : 'Cloud Database'}
           </span>
           {cloudStatus?.connected && (
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -666,7 +621,7 @@ CREATE POLICY "Service Role Upload to Templates Bucket" ON storage.objects FOR I
       )}
 
       {/* ============================================================== */}
-      {/* TAB 2: SUPABASE CLOUD DATABASE CONFIGURATION & DIAGNOSTICS */}
+      {/* TAB 2: CLOUD DATABASE DIAGNOSTICS */}
       {/* ============================================================== */}
       {activeTab === 'supabase' && (
         <div className="space-y-6">
@@ -679,7 +634,7 @@ CREATE POLICY "Service Role Upload to Templates Bucket" ON storage.objects FOR I
                 </div>
                 <div>
                   <h3 className="font-extrabold text-base text-slate-900">
-                    {currentLanguage === 'ar' ? 'حالة الربط مع Supabase' : 'Supabase Cloud Database Status'}
+                    {currentLanguage === 'ar' ? 'حالة قاعدة البيانات السحابية' : 'Cloud Database Status'}
                   </h3>
                   <p className="text-xs text-slate-500">
                     {currentLanguage === 'ar'
@@ -701,7 +656,7 @@ CREATE POLICY "Service Role Upload to Templates Bucket" ON storage.objects FOR I
                 <button
                   onClick={handleReseed}
                   className="px-3.5 py-1.5 text-xs font-bold bg-[#0B2545] hover:bg-[#07192F] text-white rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
-                  title="Reseed official Vision Medical templates to Supabase"
+                  title="Restore official Vision Medical templates"
                 >
                   <Cloud className="w-3.5 h-3.5 text-[#00A3E0]" />
                   <span>{currentLanguage === 'ar' ? 'مزامنة القوالب الرسمية' : 'Sync Official Templates'}</span>
@@ -721,8 +676,8 @@ CREATE POLICY "Service Role Upload to Templates Bucket" ON storage.objects FOR I
                       cloudStatus?.connected ? 'bg-emerald-500' : 'bg-amber-500'
                     }`}
                   />
-                  {cloudStatus?.provider === 'supabase'
-                    ? 'Supabase PostgreSQL'
+                  {cloudStatus?.provider === 'postgres'
+                    ? 'Neon PostgreSQL'
                     : 'Server Persistent Mode'}
                 </span>
               </div>
@@ -740,7 +695,7 @@ CREATE POLICY "Service Role Upload to Templates Bucket" ON storage.objects FOR I
                   ) : (
                     <>
                       <AlertTriangle className="w-4 h-4 text-amber-600" />
-                      <span>Run SQL Schema</span>
+                      <span>Not connected</span>
                     </>
                   )}
                 </span>
@@ -781,80 +736,43 @@ CREATE POLICY "Service Role Upload to Templates Bucket" ON storage.objects FOR I
             )}
           </div>
 
-          {/* Setup Guide for Render & Supabase */}
+          {/* Setup Guide: permanent free storage on Neon */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div>
-                <h4 className="font-extrabold text-sm text-slate-900">
-                  {currentLanguage === 'ar'
-                    ? 'خطوات تفعيل Supabase على Render'
-                    : 'Setup Guide: Connecting Supabase to Render Deployment'}
-                </h4>
-                <p className="text-xs text-slate-500">
-                  {currentLanguage === 'ar'
-                    ? 'اتبع هذه الخطوات البسيطة لربط Render مع Supabase بشكل دائم'
-                    : 'Follow these steps once to enable permanent shared cloud storage across all devices'}
-                </p>
-              </div>
-
-              <button
-                onClick={handleCopySql}
-                className="px-3.5 py-1.5 text-xs font-bold bg-[#00A3E0] hover:bg-[#0091C8] text-white rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                {copiedSql ? (
-                  <>
-                    <Check className="w-3.5 h-3.5" />
-                    <span>Copied SQL Schema!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Copy Supabase SQL Schema</span>
-                  </>
-                )}
-              </button>
+            <div>
+              <h4 className="font-extrabold text-sm text-slate-900">
+                {currentLanguage === 'ar'
+                  ? 'خطوات تفعيل التخزين الدائم المجاني'
+                  : 'Setup Guide: Permanent Free Storage'}
+              </h4>
+              <p className="text-xs text-slate-500">
+                {currentLanguage === 'ar'
+                  ? 'قاعدة بيانات Neon مجانية ولا تتوقف عند عدم الاستخدام'
+                  : 'Neon Postgres is free and wakes up by itself, so it never needs a manual restore'}
+              </p>
             </div>
 
             <ol className="space-y-3 text-xs text-slate-700 list-decimal list-inside bg-slate-50 p-4 rounded-xl border border-slate-200/80">
               <li className="font-medium">
-                <span className="font-bold text-slate-900">Create a Supabase Project:</span> Go to{' '}
+                <span className="font-bold text-slate-900">Create a free Neon project:</span> Go to{' '}
                 <a
-                  href="https://supabase.com"
+                  href="https://neon.tech"
                   target="_blank"
                   rel="noreferrer"
                   className="text-[#00A3E0] underline font-semibold inline-flex items-center gap-0.5"
                 >
-                  supabase.com <ExternalLink className="w-3 h-3" />
+                  neon.tech <ExternalLink className="w-3 h-3" />
                 </a>{' '}
-                and create a project (e.g. <code>vision-medical-studio</code>).
+                and copy the project&apos;s <strong className="text-slate-900">connection string</strong>.
               </li>
               <li className="font-medium">
-                <span className="font-bold text-slate-900">Run Database Schema:</span> In Supabase, open{' '}
-                <strong className="text-slate-900">SQL Editor</strong>, click <strong className="text-slate-900">New Query</strong>, paste the copied SQL schema above, and click <strong className="text-slate-900">Run</strong>.
-              </li>
-              <li className="font-medium">
-                <span className="font-bold text-slate-900">Get API Keys:</span> In Supabase, go to{' '}
-                <strong className="text-slate-900">Project Settings → API</strong>. Copy your <strong className="text-slate-900">Project URL</strong> and <strong className="text-slate-900">anon public key</strong> (or service_role key).
-              </li>
-              <li className="font-medium">
-                <span className="font-bold text-slate-900">Add to Render Environment:</span> In your Render dashboard for <code>card-jog5</code>, go to{' '}
-                <strong className="text-slate-900">Environment</strong> and add:
+                <span className="font-bold text-slate-900">Add to Render Environment:</span>
                 <div className="mt-1.5 font-mono text-[11px] bg-slate-900 text-sky-200 p-2.5 rounded-lg space-y-1">
-                  <div>SUPABASE_URL = https://your-project.supabase.co</div>
-                  <div>SUPABASE_ANON_KEY = eyJhbGciOi...</div>
-                  <div>SUPABASE_SERVICE_ROLE_KEY = eyJhbGciOi... (optional for full admin permissions)</div>
+                  <div>DATABASE_URL = postgresql://...neon.tech/neondb?sslmode=require</div>
+                  <div>CLOUDINARY_URL = cloudinary://key:secret@cloud (optional, for images)</div>
                 </div>
               </li>
               <li className="font-medium">
-                <span className="font-bold text-slate-900">Done!</span> Render will automatically connect to Supabase. Every template you upload from this dashboard will immediately be visible to all employees on{' '}
-                <a
-                  href="https://card-jog5.onrender.com/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[#00A3E0] underline font-bold"
-                >
-                  https://card-jog5.onrender.com/
-                </a>.
+                <span className="font-bold text-slate-900">Done!</span> Tables are created automatically and the official templates are added on first start.
               </li>
             </ol>
           </div>
