@@ -2,6 +2,7 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import dotenv from 'dotenv';
+import crypto from 'crypto';
 import { GoogleGenAI } from '@google/genai';
 import {
   getAllTemplates,
@@ -24,6 +25,34 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 // Increase JSON body limit to 50MB to handle high-resolution template image uploads
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Admin protection: any request that changes templates or settings needs the
+// ADMIN_PASSWORD (sent by the dashboard in the x-admin-password header).
+function isValidAdminPassword(candidate: unknown): boolean {
+  const expected = process.env.ADMIN_PASSWORD;
+  if (!expected || typeof candidate !== 'string') return false;
+  const a = crypto.createHash('sha256').update(candidate).digest();
+  const b = crypto.createHash('sha256').update(expected).digest();
+  return crypto.timingSafeEqual(a, b);
+}
+
+app.post('/api/admin/login', (req, res) => {
+  if (!process.env.ADMIN_PASSWORD) {
+    return res.status(503).json({ success: false, error: 'ADMIN_PASSWORD is not set on the server' });
+  }
+  if (!isValidAdminPassword(req.body?.password)) {
+    return res.status(401).json({ success: false, error: 'Wrong admin password' });
+  }
+  res.json({ success: true });
+});
+
+app.use(['/api/admin', '/api/upload'], (req, res, next) => {
+  if (req.method === 'GET') return next();
+  if (!isValidAdminPassword(req.header('x-admin-password'))) {
+    return res.status(401).json({ success: false, error: 'Admin password required' });
+  }
+  next();
+});
 
 // Serve uploaded template files statically
 const uploadsPath = path.resolve(process.cwd(), 'public', 'uploads');
