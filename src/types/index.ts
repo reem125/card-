@@ -108,7 +108,7 @@ export interface AdminSettings {
 }
 
 export interface CloudSyncStatus {
-  provider: 'supabase' | 'local_fallback';
+  provider: 'postgres' | 'local_fallback';
   connected: boolean;
   tableExists: boolean;
   storageExists: boolean;
@@ -116,7 +116,5 @@ export interface CloudSyncStatus {
   activeTemplates: number;
   lastSyncTime: string;
   message?: string;
-  supabaseUrl?: string;
-  hasServiceRoleKey?: boolean;
 }
 
