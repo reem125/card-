@@ -54,6 +54,7 @@ export interface EmployeeData {
   roleTitle: string;
   department: string;
   optionalText?: string;
+  optionalText2?: string;
   employeeId?: string;
   email?: string;
   phone?: string;

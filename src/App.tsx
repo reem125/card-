@@ -46,6 +46,8 @@ import {
   FileText,
   Columns,
   Maximize,
+  Mail,
+  MessageCircle,
 } from 'lucide-react';
 
 export default function App() {
@@ -864,19 +866,39 @@ export default function App() {
                 {/* AI Assistant Button */}
                 <button
                   onClick={() => setIsAiModalOpen(true)}
-                  className="px-3.5 py-1.5 text-xs font-bold text-[#005A9C] bg-[#E0F2FE] hover:bg-[#BAE6FD] border border-[#00A3E0]/30 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors"
+                  className="px-3 py-1.5 text-xs font-bold text-[#005A9C] bg-[#E0F2FE] hover:bg-[#BAE6FD] border border-[#00A3E0]/30 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-[#00A3E0]" />
-                  <span>{t.aiSmartPlacement}</span>
+                  <span className="hidden md:inline">{t.aiSmartPlacement}</span>
                 </button>
 
-                {/* Export Button */}
+                {/* Direct Send via WhatsApp Button */}
+                <button
+                  onClick={() => setIsExportModalOpen(true)}
+                  className="px-3 py-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300/80 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                  title={currentLanguage === 'ar' ? 'إرسال التصميم عبر الواتساب' : 'Send template via WhatsApp'}
+                >
+                  <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="hidden sm:inline">{currentLanguage === 'ar' ? 'واتساب' : 'WhatsApp'}</span>
+                </button>
+
+                {/* Direct Send via Email Button */}
+                <button
+                  onClick={() => setIsExportModalOpen(true)}
+                  className="px-3 py-1.5 text-xs font-bold text-[#005A9C] bg-sky-50 hover:bg-sky-100 border border-[#00A3E0]/40 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                  title={currentLanguage === 'ar' ? 'إرسال التصميم عبر الإيميل' : 'Send template via Email'}
+                >
+                  <Mail className="w-3.5 h-3.5 text-[#00A3E0]" />
+                  <span className="hidden sm:inline">{currentLanguage === 'ar' ? 'إيميل' : 'Email'}</span>
+                </button>
+
+                {/* Export / Download Button */}
                 <button
                   onClick={() => setIsExportModalOpen(true)}
                   className="px-4 py-1.5 text-xs font-bold text-white bg-[#00A3E0] hover:bg-[#0091C8] rounded-lg shadow-2xs flex items-center gap-1.5 cursor-pointer transition-colors"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>{t.downloadModalTitle.split(' ')[0]}</span>
+                  <span>{currentLanguage === 'ar' ? 'تحميل وإرسال' : 'Export & Send'}</span>
                 </button>
               </div>
             </div>
@@ -961,6 +983,7 @@ export default function App() {
         template={selectedTemplate}
         elements={elements}
         employeeName={employeeData.fullName}
+        employeeData={employeeData}
         currentLanguage={currentLanguage}
       />
     </div>
